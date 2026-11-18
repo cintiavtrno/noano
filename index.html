@@ -186,6 +186,26 @@ details.learn li{margin:.25rem 0}
 .runs{margin:.3rem 0 .2rem 1.1rem;padding:0;font-size:.92rem}
 .runs li{margin:.2rem 0}
 .perfnet{border-left:4px solid var(--c);padding:.2rem 0 .2rem .7rem;margin:.7rem 0}
+.ideia{border-color:#5a4630;background:linear-gradient(135deg,#1a1712,#131b1f 60%)}
+.ideia h2{font-size:1.35rem}
+/* bancada */
+.benchgrid{display:grid;grid-template-columns:minmax(0,1fr) 300px;gap:1rem}
+@media (max-width:1000px){.benchgrid{grid-template-columns:1fr}}
+#bench{position:relative;height:min(72vh,680px);min-height:420px;border:1px solid var(--line);border-radius:var(--r);overflow:hidden;background:radial-gradient(ellipse at 50% 30%,#1d3a33,#0c1215 75%)}
+#bench canvas{display:block;width:100%;height:100%}
+#benchMsg{position:absolute;left:.8rem;bottom:.6rem;font-size:.82rem;color:var(--muted);pointer-events:none}
+#benchLabels{position:absolute;inset:0;pointer-events:none;overflow:hidden}
+.blabel{position:absolute;transform:translate(-50%,-130%);background:#0c1215e6;border:1px solid var(--c);color:var(--text);font:600 11px/1.2 ui-monospace,Menlo,monospace;padding:.15em .45em;border-radius:5px;white-space:nowrap}
+.netlist{list-style:none;margin:.5rem 0;padding:0}
+.netlist button{width:100%;display:flex;gap:.5rem;align-items:center;text-align:left;background:transparent;border:1px solid transparent;padding:.35rem .5rem}
+.netlist button[aria-pressed=true]{border-color:var(--line);background:var(--panel2)}
+pre.code{background:#0b1114;border:1px solid var(--line);border-radius:8px;padding:.7rem;font-size:.78rem;line-height:1.5;overflow:auto;max-height:340px;margin:.5rem 0 0}
+.bom{width:100%;border-collapse:collapse;font-size:.88rem}
+.bom td,.bom th{border-bottom:1px solid var(--line);padding:.35rem .4rem;text-align:left;vertical-align:top}
+.bom th{color:var(--muted);font-weight:400;font-size:.8rem}
+.bom .tem{color:var(--ok)}
+.expf{display:flex;gap:.55rem;align-items:flex-start;margin:.35rem 0}
+.expf code{font-size:.82rem;color:var(--cobre)}
 @media (prefers-reduced-motion:reduce){*{transition:none!important;animation:none!important}}
 </style>
 </head>
@@ -217,8 +237,10 @@ details.learn li{margin:.25rem 0}
   <div class="wire" aria-hidden="true"></div>
   <button class="st" data-step="1"><svg width="22" height="22" viewBox="0 0 22 22"><rect class="pad" x="3" y="3" width="16" height="16" rx="3" fill="#2b3a42"/><text x="11" y="15.5" text-anchor="middle" font-size="11" fill="#0c1215" font-weight="700">1</text></svg>Montagem</button>
   <button class="st" data-step="2"><svg width="22" height="22" viewBox="0 0 22 22"><rect class="pad" x="3" y="3" width="16" height="16" rx="3" fill="#2b3a42"/><text x="11" y="15.5" text-anchor="middle" font-size="11" fill="#0c1215" font-weight="700">2</text></svg>Nós</button>
-  <button class="st" data-step="3"><svg width="22" height="22" viewBox="0 0 22 22"><rect class="pad" x="3" y="3" width="16" height="16" rx="3" fill="#2b3a42"/><text x="11" y="15.5" text-anchor="middle" font-size="11" fill="#0c1215" font-weight="700">3</text></svg>Ligar</button>
-  <button class="st" data-step="4"><svg width="22" height="22" viewBox="0 0 22 22"><rect class="pad" x="3" y="3" width="16" height="16" rx="3" fill="#2b3a42"/><text x="11" y="15.5" text-anchor="middle" font-size="11" fill="#0c1215" font-weight="700">4</text></svg>Case 3D</button>
+  <button class="st" data-step="5"><svg width="22" height="22" viewBox="0 0 22 22"><rect class="pad" x="3" y="3" width="16" height="16" rx="3" fill="#2b3a42"/><text x="11" y="15.5" text-anchor="middle" font-size="11" fill="#0c1215" font-weight="700">3</text></svg>Bancada 3D</button>
+  <button class="st" data-step="3"><svg width="22" height="22" viewBox="0 0 22 22"><rect class="pad" x="3" y="3" width="16" height="16" rx="3" fill="#2b3a42"/><text x="11" y="15.5" text-anchor="middle" font-size="11" fill="#0c1215" font-weight="700">4</text></svg>Ligar</button>
+  <button class="st" data-step="4"><svg width="22" height="22" viewBox="0 0 22 22"><rect class="pad" x="3" y="3" width="16" height="16" rx="3" fill="#2b3a42"/><text x="11" y="15.5" text-anchor="middle" font-size="11" fill="#0c1215" font-weight="700">5</text></svg>Case 3D</button>
+  <button class="st" data-step="6"><svg width="22" height="22" viewBox="0 0 22 22"><rect class="pad" x="3" y="3" width="16" height="16" rx="3" fill="#2b3a42"/><text x="11" y="15.5" text-anchor="middle" font-size="11" fill="#0c1215" font-weight="700">6</text></svg>Exportar</button>
   <div class="spacer"></div>
   <button id="chatBtn">💬 Perguntar sobre a montagem</button>
 </nav>
@@ -226,7 +248,17 @@ details.learn li{margin:.25rem 0}
 <main>
   <!-- 1 MONTAGEM -->
   <section id="s1" class="step">
-    <h2>O que você montou</h2>
+    <div class="card ideia">
+      <h2>Começar por uma ideia</h2>
+      <p class="small muted" style="max-width:75ch">Diga o que você quer fazer. A IA escolhe as peças (primeiro as que você marcou em <b>Meu material</b> e <b>Minhas peças</b>), liga tudo na protoboard, escreve o código e diz o que falta comprar. Vira um projeto novo; o atual não é apagado.</p>
+      <textarea id="ideiaIn" rows="3" style="font-family:inherit;font-size:1rem;margin-top:.5rem" placeholder="ex.: tenho um ESP32-S3 e uma tela TFT 1,8&quot;, quero exibir animações na tela e trocar de animação com um botão"></textarea>
+      <div class="row" style="margin-top:.5rem;justify-content:space-between">
+        <label class="small"><input type="checkbox" id="ideiaExtra" checked> pode sugerir peças que eu não tenho</label>
+        <button class="prim" id="ideiaBtn">Montar o circuito</button>
+      </div>
+      <div id="ideiaOut" class="progress" style="margin-top:.4rem"></div>
+    </div>
+    <h2 style="margin-top:1.4rem">O que você montou</h2>
     <p class="lede">Escolha a placa e os módulos, cole o código e suba fotos da protoboard. O código é a fonte principal das ligações; as fotos servem para conferir. As medidas vêm aproximadas: meça a sua placa e corrija aqui, porque é delas que o case nasce.</p>
     <div class="grid2">
       <div>
@@ -350,6 +382,40 @@ details.learn li{margin:.25rem 0}
           <p class="small muted" id="stlMsg">A tampa já vem virada para imprimir (face de cima na mesa). Material sugerido: PLA, 0,2 mm, 3 paredes, sem suporte. Os furos de USB podem pedir suporte se ficarem altos.</p>
           <div id="caseTips"></div>
         </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- 5 BANCADA 3D -->
+  <section id="s5" class="step" hidden>
+    <div class="row" style="justify-content:space-between">
+      <h2>Bancada 3D</h2>
+      <div class="row">
+        <div class="seg" role="group" aria-label="Montagem mostrada"><button data-bm="proto" aria-pressed="true">Protoboard</button><button data-bm="livre" aria-pressed="false">Jumpers soltos</button><button data-bm="perf" aria-pressed="false">Placa perfurada</button></div>
+        <button id="benchFlip" hidden>⟲ virar a placa</button>
+        <button id="benchReset" class="ghost">recentralizar</button>
+      </div>
+    </div>
+    <p class="lede">A sua montagem como ela vai ficar: cada fio na cor do nó dele. Clique num fio, ou num nó da lista, para destacar os pinos dele; os outros ficam transparentes.</p>
+    <div class="benchgrid">
+      <div id="bench"><div id="benchLabels"></div><div id="benchMsg">carregando a bancada…</div></div>
+      <aside class="card" id="benchSide"></aside>
+    </div>
+  </section>
+
+  <!-- 6 EXPORTAR -->
+  <section id="s6" class="step" hidden>
+    <h2>Exportar o projeto</h2>
+    <p class="lede">Um pacote para fabricar: placa e netlist para o KiCad, lista de compras, STL do case e o código com os pinos. Tudo num .zip.</p>
+    <div class="grid2">
+      <div>
+        <div class="card"><h3>O que vai no pacote</h3><div id="expFiles" style="margin-top:.6rem"></div>
+          <div class="row" style="margin-top:.8rem"><button class="prim" id="expZip">Baixar pacote (.zip)</button><span class="small muted" id="expMsg"></span></div></div>
+        <div class="card"><div class="row" style="justify-content:space-between"><h3>pinos.h</h3><button class="mini" id="copyPins">copiar</button></div>
+          <pre class="code" id="pinsPre"></pre></div>
+      </div>
+      <div>
+        <div class="card"><h3>Lista de compras</h3><p class="small muted">Quantidades e comprimentos estimados pela montagem. O que está marcado em Meu material aparece como “já tenho”.</p><div id="bomTable" style="overflow:auto"></div></div>
       </div>
     </div>
   </section>
@@ -554,10 +620,12 @@ document.querySelectorAll('.steps .st').forEach(b=>b.onclick=()=>go(+b.dataset.s
 function go(n){
   step=n;
   document.querySelectorAll('.steps .st').forEach(b=>b.setAttribute('aria-current',+b.dataset.step===n));
-  [1,2,3,4].forEach(i=>$('#s'+i).hidden=i!==n);
+  [1,2,3,4,5,6].forEach(i=>$('#s'+i).hidden=i!==n);
   if(n===2)renderNets();
   if(n===3)renderLigar();
   if(n===4)renderCase();
+  if(n===5)renderBench();
+  if(n===6)renderExport();
   try{history.replaceState(null,'','#etapa-'+n)}catch(e){}
 }
 
@@ -774,6 +842,57 @@ ${(P.codigo||'(sem código)').slice(0,24000)}`;
     console.error(e);
     prog.innerHTML=`<div class="alert err">${e.code==='not_granted'?'Você não autorizou a IA nesta página.':e.code==='rate_limited'?'Muitas chamadas seguidas. Espere um pouco e tente de novo.':'Não consegui concluir: '+esc(e.message||e.code||e)}</div>`;
   }finally{btn.disabled=false}
+};
+/* ---- começar por uma ideia ---- */
+$('#ideiaBtn').onclick=async()=>{
+  const ideia=$('#ideiaIn').value.trim();const out=$('#ideiaOut');const btn=$('#ideiaBtn');
+  if(!ideia){out.innerHTML='<div class="alert">Escreva o que você quer fazer.</div>';return}
+  const sample=await getSample();if(!sample){out.innerHTML='<div class="alert err">A IA não está disponível nesta visualização. Abra a página pelo link do Claude.</div>';return}
+  const tem=[...MAT_PADRAO,...MAT.extras].filter(temMat);
+  const catalogo=[...Object.entries(MYPARTS).map(([k,v])=>({tipo:'my:'+k,nome:v.nome,papel:v.papel,pinos:v.papel==='placa'?{fileira1:v.fp?.r1||[],fileira2:v.fp?.r2||[]}:v.pinos,minha:true})),
+    ...Object.entries(PRESETS).filter(([k,v])=>v.papel!=='pcb'&&k!=='custom').map(([k,v])=>({tipo:k,nome:v.nome,papel:v.papel,pinos:v.papel==='placa'?{fileira1:v.fp?.r1||[],fileira2:v.fp?.r2||[]}:v.pinos}))];
+  const prompt=`Você é tutora de eletrônica de uma pessoa que monta projetos com ESP32 e quer aprender. Ela descreveu uma ideia; projete o circuito e o código. Português do Brasil, didático, frases curtas.
+
+IDEIA: ${ideia}
+
+MATERIAL QUE ELA TEM: ${tem.join('; ')||'(não informado)'}
+${$('#ideiaExtra').checked?'Pode sugerir peças que ela não tem, mas prefira as que tem; liste o que comprar em "faltando".':'Use SÓ o que ela tem e os componentes que ela citou. Se for impossível, explique em "alertas".'}
+
+CATÁLOGO DE PEÇAS (use o "tipo" exato; peças com minha=true são dela; placas trazem a pinagem física):
+${JSON.stringify(catalogo)}
+
+REGRAS
+- Escolha UMA placa ESP do catálogo (a que ela citou ou tem). Use só pinos que existem na pinagem dela. Evite pinos de strapping, só-entrada e os de flash/PSRAM (no ESP32-S3 com PSRAM octal, GPIO26–37).
+- Se precisar de peça fora do catálogo (resistor, potenciômetro, sensor…), use tipo "custom" com nome, medidas aproximadas L, W, H em mm e a lista de pinos.
+- Nós: cada nó é um conjunto de pinos ligados. Inclua alimentação (3V3 ou 5V conforme o módulo) e GND. Use "ref" das peças em "comp" e nomes de pino exatos.
+- Código: sketch Arduino completo e funcional para ESP32 que realiza a ideia. Prefira bibliotecas que recebem os pinos no próprio código (ex.: Adafruit_ST7735/Adafruit_ST7789 + Adafruit_GFX, Adafruit_SSD1306). Use os mesmos pinos dos nós. Comente em português. Se usar animação, faça algo bonito e leve (sem imagens externas).
+- Cores de fio: vermelho para 3V3/5V, preto para GND; sinais entre ${SIGCYCLE.join(', ')}.
+
+Responda APENAS com JSON válido:
+{"titulo":"nome curto do projeto","resumo":"2-3 frases","componentes":[{"ref":"esp","tipo":"tipo do catálogo ou custom","nome":"","L":0,"W":0,"H":0,"pinos":[""]}],
+"nos":[{"nome":"","tipo":"energia|terra|sinal","cor_fio":"","pontos":[{"comp":"ref","pino":""}],"nota":""}],
+"codigo":"sketch completo","bibliotecas":["nome da biblioteca (Gerenciador de Bibliotecas da Arduino IDE)"],
+"faltando":["peça a comprar"],"passos":["passo de montagem na protoboard"],"alertas":[""]}`;
+  btn.disabled=true;out.textContent='Projetando o circuito…';
+  try{
+    const r=await sample(prompt,{modelTier:'complex',onText:({text})=>{out.textContent=!text||text==='Thinking...'?'Pensando no circuito…':'Escrevendo… '+text.length+' caracteres'}});
+    const j=extractJSON(r.text);
+    const np=normalize({id:'p'+uid(),nome:j.titulo||ideia.slice(0,40),criado:Date.now()});
+    const refMap={};
+    (j.componentes||[]).forEach(cj=>{const key=(cj.tipo&&(PRESETS[cj.tipo]||(cj.tipo.startsWith('my:')&&MYPARTS[cj.tipo.slice(3)])))?cj.tipo:'custom';const c=compFromPreset(key);
+      if(key==='custom'){c.nome=cj.nome||'peça';c.L=num(cj.L,15);c.W=num(cj.W,10);c.H=num(cj.H,5);c.pinos=(cj.pinos||[]).filter(Boolean);c.aprox=true}
+      np.comps.push(c);refMap[cj.ref]=c.id});
+    const ids=new Set(np.comps.map(c=>c.id));let si=0;
+    np.nos=(j.nos||[]).map(n=>{const tipo=['energia','terra','sinal'].includes(n.tipo)?n.tipo:guessTipo(n.nome);let cor=String(n.cor_fio||'').toLowerCase().normalize('NFD').replace(/[̀-ͯ]/g,'');
+      if(!PALETTE.find(p=>p.k===cor))cor=tipo==='energia'?'vermelho':tipo==='terra'?'preto':SIGCYCLE[si++%SIGCYCLE.length];
+      return{id:'n'+uid(),nome:n.nome||'nó',tipo,cor,pontos:(n.pontos||[]).map(p=>({c:refMap[p.comp]||p.comp,p:String(p.pino||'')})).filter(p=>ids.has(p.c)&&p.p),nota:n.nota||'',ok:false}}).filter(n=>n.pontos.length);
+    np.codigo=String(j.codigo||'');
+    np.analise={resumo:j.resumo||'',alertas:[...(j.alertas||[]),...((j.faltando||[]).length?['Falta comprar: '+j.faltando.join(', ')]:[]),...((j.bibliotecas||[]).length?['Bibliotecas (instale na Arduino IDE): '+j.bibliotecas.join(', ')]:[])].filter(Boolean),sem:j.passos||[],com:[],caseDicas:[],quando:Date.now()};
+    np.ideia={texto:ideia,faltando:j.faltando||[],bibliotecas:j.bibliotecas||[]};
+    P=np;await saveProject(P).catch(()=>{});await refreshProjSel();renderAll();
+    out.innerHTML=`<div class="alert" style="border-color:var(--ok);background:#13261f">Projeto <b>${esc(P.nome)}</b> criado: ${P.comps.length} peças, ${P.nos.length} nós e o código. <button class="mini prim" onclick="benchMode='proto';go(5)">ver na protoboard 3D →</button></div>`;
+  }catch(e){console.error(e);out.innerHTML=`<div class="alert err">${e.code==='not_granted'?'Você não autorizou a IA nesta página.':e.code==='rate_limited'?'Muitas chamadas seguidas. Espere um pouco.':'Não consegui: '+esc(e.message||e.code||e)}</div>`}
+  finally{btn.disabled=false}
 };
 function applyAnalysis(j){
   const refMap={};
@@ -1329,21 +1448,33 @@ function renderCase(){
 /* three.js */
 let T=null;
 function loadScript(src){return new Promise((res,rej)=>{const s=document.createElement('script');s.src=src;s.onload=res;s.onerror=rej;document.head.appendChild(s)})}
-async function initThree(){
-  if(T)return T;
-  try{
+let threeP=null;
+function loadThree(){
+  if(!threeP)threeP=(async()=>{
     if(!window.THREE)await loadScript('https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js');
     if(!THREE.OrbitControls)await loadScript('https://cdn.jsdelivr.net/npm/three@0.128.0/examples/js/controls/OrbitControls.js');
-  }catch(e){$('#viewMsg').textContent='Não consegui carregar a visualização 3D. Os arquivos .stl continuam funcionando.';return null}
-  const el=$('#view');const r=new THREE.WebGLRenderer({antialias:true,alpha:true});r.setPixelRatio(Math.min(2,devicePixelRatio));el.prepend(r.domElement);
+    return true})().catch(e=>{threeP=null;throw e});
+  return threeP;
+}
+function makeViewer(el,{shadows=false,onFrame=null}={}){
+  const r=new THREE.WebGLRenderer({antialias:true,alpha:true});r.setPixelRatio(Math.min(2,devicePixelRatio));el.prepend(r.domElement);
+  if(shadows){r.shadowMap.enabled=true;r.shadowMap.type=THREE.PCFSoftShadowMap}
   const scene=new THREE.Scene();const cam=new THREE.PerspectiveCamera(35,1,1,5000);cam.up.set(0,0,1);
-  scene.add(new THREE.HemisphereLight(0xdfe9ee,0x1a2226,.9));const dl=new THREE.DirectionalLight(0xffffff,.7);dl.position.set(80,-120,200);scene.add(dl);
+  scene.add(new THREE.HemisphereLight(0xdfe9ee,0x1a2226,.9));const dl=new THREE.DirectionalLight(0xffffff,.75);dl.position.set(80,-120,220);scene.add(dl);
+  if(shadows){dl.castShadow=true;dl.shadow.mapSize.set(2048,2048);const s=dl.shadow.camera;s.left=-160;s.right=160;s.top=160;s.bottom=-160;s.near=10;s.far=600;dl.shadow.bias=-0.0006}
   const ctr=new THREE.OrbitControls(cam,r.domElement);ctr.enableDamping=true;
   const root=new THREE.Group();scene.add(root);
-  const size=()=>{const w=el.clientWidth,h=el.clientHeight;r.setSize(w,h,false);cam.aspect=w/h;cam.updateProjectionMatrix()};
+  const size=()=>{const w=el.clientWidth,h=el.clientHeight;if(!w||!h)return;r.setSize(w,h,false);cam.aspect=w/h;cam.updateProjectionMatrix()};
   new ResizeObserver(size).observe(el);size();
-  (function loop(){requestAnimationFrame(loop);ctr.update();r.render(scene,cam)})();
-  T={r,scene,cam,ctr,root,fitted:false};$('#viewMsg').textContent='arraste para girar · role para aproximar';
+  const V={r,scene,cam,ctr,root,dl,el};
+  (function loop(){requestAnimationFrame(loop);if(!el.offsetParent)return;ctr.update();if(onFrame)onFrame(V);r.render(scene,cam)})();
+  return V;
+}
+function disposeTree(o){o.traverse(x=>{if(x.geometry)x.geometry.dispose();if(x.material){(Array.isArray(x.material)?x.material:[x.material]).forEach(m=>m.dispose())}})}
+async function initThree(){
+  if(T)return T;
+  try{await loadThree()}catch(e){$('#viewMsg').textContent='Não consegui carregar a visualização 3D. Os arquivos .stl continuam funcionando.';return null}
+  T=makeViewer($('#view'));$('#viewMsg').textContent='arraste para girar · role para aproximar';
   return T;
 }
 function geoFrom(pos){const g=new THREE.BufferGeometry();g.setAttribute('position',new THREE.BufferAttribute(pos,3));g.computeVertexNormals();return g}
@@ -1407,6 +1538,458 @@ document.querySelectorAll('[data-stl]').forEach(b=>b.onclick=async()=>{
       :`${filename} pronto (${files[0].tris} triângulos). Abra no fatiador (Cura, PrusaSlicer, Bambu Studio).`;
   }catch(e){$('#stlMsg').textContent='Download cancelado ou recusado: '+(e.message||e.code||e)}
 });
+
+/* ============ BANCADA 3D ============ */
+let B=null,benchMode='proto',benchSel=null,benchFlip=false;
+const WIRE_HEX={preto:'#1d1d1f',branco:'#ececec'};
+const wireHex=k=>WIRE_HEX[k]||hexOf(k);
+const SM={};
+function sm(key,o){return SM[key]||(SM[key]=new THREE.MeshStandardMaterial(o))}
+function mk(geo,m,x=0,y=0,z=0){const o=new THREE.Mesh(geo,m);o.position.set(x,y,z);o.castShadow=true;o.receiveShadow=true;return o}
+const bx=(w,d,h,m,x,y,z)=>mk(new THREE.BoxGeometry(w,d,h),m,x,y,z);
+function cy(r,h,m,x,y,z,seg=20){const g=new THREE.CylinderGeometry(r,r,h,seg);g.rotateX(Math.PI/2);return mk(g,m,x,y,z)}
+const texCache={};
+function labelTex(text,bg,fg,w=256,h=96){
+  const k=text+bg+fg+w+h;if(texCache[k])return texCache[k];
+  const c=document.createElement('canvas');c.width=w;c.height=h;const g=c.getContext('2d');g.fillStyle=bg;g.fillRect(0,0,w,h);
+  g.fillStyle=fg;g.font=`700 ${Math.round(h*.34)}px "Bricolage Grotesque",system-ui,sans-serif`;g.textAlign='center';g.textBaseline='middle';
+  const lines=String(text).split('\n');lines.forEach((l,i)=>g.fillText(l,w/2,h/2+(i-(lines.length-1)/2)*h*.38));
+  const t=new THREE.CanvasTexture(c);t.anisotropy=4;return texCache[k]=t;
+}
+const M=()=>({
+  pcbBlack:sm('pcbB',{color:0x16181b,roughness:.6}),plastic:sm('plast',{color:0x111214,roughness:.7}),
+  gold:sm('gold',{color:0xd8b25a,metalness:.85,roughness:.3}),silver:sm('silv',{color:0xc9ced3,metalness:.9,roughness:.25}),
+  chip:sm('chip',{color:0x101112,roughness:.5}),glass:sm('glass',{color:0x0a1020,roughness:.08,metalness:.2,emissive:0x0d2240,emissiveIntensity:.5}),
+  copper:sm('copper',{color:0xc98447,metalness:.8,roughness:.35}),hole:sm('hole',{color:0x080808,roughness:1}),solder:sm('solder',{color:0xdfe3e6,metalness:.95,roughness:.2}),
+});
+function header(n,{female=false,pinsDown=false}={}){
+  const g=new THREE.Group();const m=M();const len=n*2.54;const h=female?8.5:2.5;
+  g.add(bx(len,2.54,h,m.plastic,0,0,pinsDown?-h/2:h/2));
+  if(!female)for(let i=0;i<n;i++){const x=(i-(n-1)/2)*2.54;g.add(bx(.64,.64,pinsDown?8.5:6,m.gold,x,0,pinsDown?-h-4.25+2.5:h+3))}
+  else for(let i=0;i<n;i++){const x=(i-(n-1)/2)*2.54;g.add(bx(1,1,.2,m.hole,x,0,h+.05))}
+  return g;
+}
+/* placa ESP: origem no centro, antena em -x, USB em +x; pinos da fileira 1 em y = rowSign*gap/2 */
+function espModel(c,{rowSign=1,pinsDown=false}={}){
+  const g=new THREE.Group();const m=M();const L=num(c.L,50),W=num(c.W,25);const r1=c.fp?.r1||[],r2=c.fp?.r2||[];const n=Math.max(r1.length,r2.length);const gap=(c.fp?.gap||10)*2.54;
+  g.add(bx(L,W,1.6,m.pcbBlack,0,0,.8));
+  const anchors=[];
+  [[r1,rowSign*gap/2],[r2,-rowSign*gap/2]].forEach(([row,y])=>{if(!row.length)return;const hd=header(row.length,{pinsDown});hd.position.set(((row.length-n)/2)*2.54*0,y,pinsDown?0:1.6);g.add(hd);
+    row.forEach((nm,i)=>{const a=new THREE.Object3D();a.position.set((i-(row.length-1)/2)*2.54,y,pinsDown?-11:1.6+2.5+6);a.userData={pin:nm};g.add(a);anchors.push(a)})});
+  const big=L>40;
+  if(big){const mw=Math.min(18,W-7);g.add(bx(25,mw,.8,m.pcbBlack,-L/2+12.5,0,2));const can=bx(17.5,mw-1.5,2.6,m.silver,-L/2+6+8.75+.5,0,3.7);g.add(can);
+    const top=new THREE.Mesh(new THREE.PlaneGeometry(15,mw-4),new THREE.MeshStandardMaterial({map:labelTex(c.nome.split(/[ (]/)[0],'#c9ced3','#3a3f44'),metalness:.6,roughness:.35}));top.position.set(-L/2+15.25,0,5.02);g.add(top)}
+  else{g.add(bx(5,5,.9,m.chip,-2,0,2.05));g.add(bx(3,1.6,1,sm('ant',{color:0xe9e3d0,roughness:.6}),-L/2+2.5,0,2.1))}
+  const usbN=c.tipo==='esp32s3-devkitc'?2:1;
+  for(let i=0;i<usbN;i++){const y=usbN===2?(i?-1:1)*Math.min(7,W/2-5):0;g.add(bx(7.4,big?9:8.8,3.2,m.silver,L/2-3.2,y,3.2))}
+  if(big){g.add(bx(3.4,4.2,1.6,m.chip,L/2-14,W/2-4,2.4));g.add(bx(3.4,4.2,1.6,m.chip,L/2-14,-W/2+4,2.4))}
+  g.add(bx(1.6,.9,.6,sm('led',{color:0xff3b30,emissive:0xff2010,emissiveIntensity:.8}),L/2-18,0,1.9));
+  return{g,anchors};
+}
+const MOD_COLOR={tft18:0xb3262e,tft144:0xb3262e,'st7789-154':0x1f4f8f,oled096:0x1c3f7a,bme280:0x6b3fa0,mpu6050:0x1f5fa8,miniprotoboard:0xeeeeea};
+/* módulo: origem no centro, pinos na borda esquerda (x mínimo), pino 0 em +y */
+function moduleModel(c,{pinsDown=false}={}){
+  const g=new THREE.Group();const m=M();const n=Math.max(c.pinos.length,1);
+  let L=num(c.L,20),W=Math.max(num(c.W,15),n*2.54+1.5);const anchors=[];
+  const pinX=-L/2+1.9;
+  const addPins=(z0)=>{const hd=header(n,{pinsDown});hd.rotation.z=Math.PI/2;hd.position.set(pinX,0,z0);g.add(hd);
+    c.pinos.forEach((nm,i)=>{const a=new THREE.Object3D();a.position.set(pinX,((n-1)/2-i)*2.54,pinsDown?-11:z0+2.5+6);a.userData={pin:nm};g.add(a);anchors.push(a)})};
+  const t=c.tipo||'';
+  if(t==='led5'){g.add(cy(2.5,5,sm('ledb',{color:0xff4b3a,transparent:true,opacity:.75,emissive:0xff2a10,emissiveIntensity:.6}),2,0,6.5));const s=mk(new THREE.SphereGeometry(2.5,16,10,0,Math.PI*2,0,Math.PI/2),SM.ledb,2,0,9);s.rotation.x=Math.PI/2;g.add(s);addPins(0);return{g,anchors}}
+  if(t==='buzzer'){g.add(cy(6,9,M().chip,1.5,0,4.5,32));g.add(cy(1,0.3,M().hole,1.5,0,9.1));addPins(0);return{g,anchors}}
+  if(t==='botao12'){g.add(bx(12,12,3.5,M().chip,1.5,0,1.75));g.add(cy(3.6,4,sm('cap',{color:0x2b2f33,roughness:.5}),1.5,0,5.5));addPins(0);return{g,anchors}}
+  const col=MOD_COLOR[t]??(c.papel==='modulo'?0x1f6f73:0x1f6f73);
+  g.add(bx(L,W,1.6,sm('mod'+col,{color:col,roughness:.6}),0,0,.8));
+  if(c.janela){const j=c.janela;g.add(bx(Math.min(L-2,num(j.w)+3),Math.min(W-2,num(j.h)+4),1.4,M().plastic,num(j.dx)+1,num(j.dy),2.3));
+    const gl=bx(num(j.w),num(j.h),.4,M().glass,num(j.dx)+1,num(j.dy),3.2);g.add(gl)}
+  else if(t!=='miniprotoboard'){g.add(bx(Math.min(5,L/3),Math.min(5,W/3),1,M().chip,L*.1,0,2.1))}
+  if(t==='miniprotoboard'){for(let y=0;y<10;y++)for(let x=0;x<17;x++)g.add(bx(1,1,.1,M().hole,-L/2+3+x*2.54,-W/2+5+y*2.54+(y>4?2.54:0),1.65))}
+  const lbl=new THREE.Mesh(new THREE.PlaneGeometry(Math.min(L*.8,24),5),new THREE.MeshBasicMaterial({map:labelTex(c.nome.split(/[ (]/)[0],'#'+col.toString(16).padStart(6,'0'),'#ffffffcc',256,54),transparent:true}));
+  lbl.position.set(L*.12,-W/2+3.2,1.62);if(!c.janela||num(c.janela.h)<W-10)g.add(lbl);
+  addPins(1.6);
+  return{g,anchors};
+}
+function wireTube(a,b,hex,{lift=12,side=0,radius=.55,flat=false}={}){
+  const d=a.distanceTo(b);const mid=a.clone().add(b).multiplyScalar(.5);mid.z=Math.max(a.z,b.z)+lift+d*.16;
+  const dir=b.clone().sub(a);dir.z=0;if(dir.lengthSq()>0){dir.normalize();mid.x+=-dir.y*side;mid.y+=dir.x*side}
+  const up=v=>v.clone().add(new THREE.Vector3(0,0,flat?2.2:8));
+  if(flat){const a2=a.clone().setZ(a.z-1.5),b2=b.clone().setZ(b.z-1.5);const pts=[a2,up(a),mid,up(b),b2];return mk(new THREE.TubeGeometry(new THREE.CatmullRomCurve3(pts,false,'centripetal'),48,radius,8,false),new THREE.MeshStandardMaterial({color:new THREE.Color(hex),roughness:.42,transparent:true}))}
+  const pts=[a.clone(),up(a),mid,up(b),b.clone()];
+  const curve=new THREE.CatmullRomCurve3(pts,false,'centripetal');
+  const mat=new THREE.MeshStandardMaterial({color:new THREE.Color(hex),roughness:.42,metalness:.05,transparent:true});
+  return mk(new THREE.TubeGeometry(curve,64,radius,8,false),mat);
+}
+function dupont(p){return bx(2.6,2.6,14,M().plastic,p.x,p.y,p.z+1)}
+async function renderBench(){
+  try{await loadThree()}catch(e){$('#benchMsg').textContent='Não consegui carregar o 3D.';return}
+  if(!B){
+    B=makeViewer($('#bench'),{shadows:true,onFrame:benchLabels});
+    const floor=mk(new THREE.PlaneGeometry(1200,1200),new THREE.MeshStandardMaterial({color:0x1b3a31,roughness:.95}),0,0,0);floor.castShadow=false;B.scene.add(floor);
+    const g1=new THREE.GridHelper(1200,120,0x2f5d4f,0x24493e);g1.rotation.x=Math.PI/2;g1.position.z=.05;B.scene.add(g1);
+    const g2=new THREE.GridHelper(1200,24,0x3f7a68,0x3f7a68);g2.rotation.x=Math.PI/2;g2.position.z=.08;B.scene.add(g2);
+    B.ray=new THREE.Raycaster();let down=null;
+    B.r.domElement.addEventListener('pointerdown',e=>down=[e.clientX,e.clientY]);
+    B.r.domElement.addEventListener('pointerup',e=>{if(!down||Math.hypot(e.clientX-down[0],e.clientY-down[1])>5)return;
+      const rc=B.r.domElement.getBoundingClientRect();const v=new THREE.Vector2((e.clientX-rc.left)/rc.width*2-1,-(e.clientY-rc.top)/rc.height*2+1);
+      B.ray.setFromCamera(v,B.cam);const hits=B.ray.intersectObjects(B.pick||[],false);setBenchSel(hits.length?hits[0].object.userData.net:null)});
+    $('#benchMsg').textContent='arraste para girar · botão direito para mover · role para aproximar';
+  }
+  buildBench(true);
+}
+function benchLabels(V){
+  const box=$('#benchLabels');if(!B||!B.labels)return;const w=V.el.clientWidth,h=V.el.clientHeight;
+  B.labels.forEach(l=>{const p=l.pos.clone();l.obj&&l.obj.getWorldPosition(p);p.project(V.cam);const on=p.z<1&&Math.abs(p.x)<1.1&&Math.abs(p.y)<1.1;
+    l.el.style.display=on?'block':'none';if(on){l.el.style.left=((p.x+1)/2*w)+'px';l.el.style.top=((1-p.y)/2*h)+'px'}});
+}
+function setBenchSel(id){
+  benchSel=id||null;if(!B)return;
+  Object.entries(B.netObjs||{}).forEach(([nid,objs])=>objs.forEach(o=>{o.material.opacity=benchSel&&benchSel!==nid?.12:1;o.material.depthWrite=!(benchSel&&benchSel!==nid)}));
+  const box=$('#benchLabels');box.innerHTML='';B.labels=[];
+  if(benchSel){const n=P.nos.find(x=>x.id===benchSel);(B.anchorsByNet[benchSel]||[]).forEach(a=>{const el=document.createElement('div');el.className='blabel';el.style.setProperty('--c',hexOf(n.cor));el.textContent=a.text;box.appendChild(el);B.labels.push({el,obj:a.obj,pos:new THREE.Vector3()})})}
+  document.querySelectorAll('#benchSide [data-bnet]').forEach(b=>b.setAttribute('aria-pressed',b.dataset.bnet===benchSel));
+}
+function buildBench(refit){
+  document.querySelectorAll('[data-bm]').forEach(x=>x.setAttribute('aria-pressed',x.dataset.bm===benchMode));
+  const root=B.root;disposeTree(root);root.clear();
+  B.netObjs={};B.pick=[];B.anchorsByNet={};B.protoOff=[];B.perfGroup=null;
+  const netOf=(cid,pin)=>P.nos.find(n=>n.pontos.some(pt=>pt.c===cid&&pinMatch(pin,pt.p)));
+  const regNet=(id,o)=>{(B.netObjs[id]=B.netObjs[id]||[]).push(o);o.userData.net=id;B.pick.push(o)};
+  const anchorsOf={};const addAnchors=(c,list)=>{anchorsOf[c.id]=(anchorsOf[c.id]||[]).concat(list)};
+  const perf=perfComp();const usePerf=benchMode==='perf'&&perf&&Object.keys(P.perf.pos||{}).length;
+  $('#benchFlip').hidden=!usePerf;
+  let side='';
+  const short=c=>c.nome.split(/[ (]/)[0];
+  const useProto=!usePerf&&benchMode==='proto';
+  if(useProto){side+=buildProto(root,regNet,addAnchors,netOf)}
+  else if(!usePerf){
+    let yB=0;const placas=P.comps.filter(c=>c.papel==='placa'),mods=P.comps.filter(c=>c.papel==='modulo');
+    let maxL=0;placas.forEach(c=>{const{g,anchors}=espModel(c);g.position.set(0,yB,0);root.add(g);addAnchors(c,anchors.map(a=>({obj:a,c})));maxL=Math.max(maxL,num(c.L));yB-=num(c.W)+35});
+    const tot=mods.reduce((s,c)=>s+Math.max(num(c.W),c.pinos.length*2.54+1.5)+14,0);let y=tot/2;
+    mods.forEach(c=>{const{g,anchors}=moduleModel(c);const W=Math.max(num(c.W),c.pinos.length*2.54+1.5);y-=W/2;g.position.set(maxL/2+45+num(c.L)/2,y,0);y-=W/2+14;root.add(g);addAnchors(c,anchors.map(a=>({obj:a,c})))});
+    if(benchMode==='perf')side+=`<div class="alert">Para ver na placa perfurada, posicione as peças em <a href="#etapa-3" onclick="ligarModo='pcb';go(3);document.querySelector('[data-mode=pcb]').click();return false">Ligar → Na placa perfurada</a>.</div>`;
+  }else{
+    const C=perf.cols|0,R=perf.rows|0,L=num(perf.L),W=num(perf.W);const ox=(L-(C-1)*HOLE)/2,oy=(W-(R-1)*HOLE)/2;
+    const pg=new THREE.Group();root.add(pg);B.perfGroup=pg;
+    const hxy=(gx,gy)=>new THREE.Vector3(-L/2+ox+gx*HOLE,W/2-oy-gy*HOLE,0);
+    pg.add(bx(L,W,1.6,sm('fr2',{color:0xc4a06a,roughness:.75}),0,0,.8));
+    const ring=new THREE.CylinderGeometry(.95,.95,.08,14);ring.rotateX(Math.PI/2);const dot=new THREE.CylinderGeometry(.5,.5,.1,10);dot.rotateX(Math.PI/2);
+    [[ring,M().copper,1.64],[ring,M().copper,-.04],[dot,M().hole,1.7],[dot,M().hole,-.1]].forEach(([geo,mt,z])=>{const im=new THREE.InstancedMesh(geo,mt,C*R);const o=new THREE.Object3D();let i=0;
+      for(let y=0;y<R;y++)for(let x=0;x<C;x++){const p=hxy(x,y);o.position.set(p.x,p.y,z);o.updateMatrix();im.setMatrixAt(i++,o.matrix)}im.receiveShadow=true;pg.add(im)});
+    const r=routePerf();let offY=W/2;let modX=L/2+40;
+    r.parts.forEach(pl=>{const c=pl.c;const pos=P.perf.pos[c.id];const pts=pl.pins.map(p=>hxy(p.gx,p.gy));if(!pts.length)return;
+      pts.forEach(p=>{const s=mk(new THREE.SphereGeometry(1.05,10,6),M().solder,p.x,p.y,-.15);s.scale.z=.45;pg.add(s)});
+      if(c.papel==='placa'){
+        const n1=(c.fp?.r1||[]).length;const rows=[pts.slice(0,n1),pts.slice(n1)];
+        rows.forEach(rw=>{if(rw.length<1)return;const a=rw[0],b=rw[rw.length-1];const hd=header(rw.length,{female:true});hd.position.set((a.x+b.x)/2,(a.y+b.y)/2,1.6);hd.rotation.z=Math.atan2(b.y-a.y,b.x-a.x);pg.add(hd)});
+        const ref=rows[0].length>1?rows[0]:rows[1];const dir=ref[ref.length-1].clone().sub(ref[0]).normalize();
+        const ctr=pts.reduce((s,p)=>s.add(p),new THREE.Vector3()).multiplyScalar(1/pts.length);
+        const perp=new THREE.Vector3(-dir.y,dir.x,0);const rs=rows[0].length?Math.sign(rows[0][0].clone().sub(ctr).dot(perp))||1:1;
+        const{g,anchors}=espModel(c,{rowSign:rs,pinsDown:true});g.position.set(ctr.x,ctr.y,1.6+8.5+2.5);g.rotation.z=Math.atan2(dir.y,dir.x);pg.add(g);
+        addAnchors(c,pl.pins.map((p,i)=>({obj:null,pos:hxy(p.gx,p.gy).setZ(1.6+4),c,pin:p.name})));
+      }else if(pos.modo==='direto'){
+        const n=pts.length;const dir=n>1?pts[n-1].clone().sub(pts[0]).normalize():new THREE.Vector3(0,-1,0);
+        const{g}=moduleModel(c,{pinsDown:true});const ang=Math.atan2(dir.y,dir.x)+Math.PI/2;g.rotation.z=ang;
+        const lp=new THREE.Vector3(-num(c.L)/2+1.9,((n-1)/2)*2.54,0).applyAxisAngle(new THREE.Vector3(0,0,1),ang);g.position.set(pts[0].x-lp.x,pts[0].y-lp.y,1.6+2.5);pg.add(g);
+        addAnchors(c,pl.pins.map(p=>({obj:null,pos:hxy(p.gx,p.gy).setZ(4),c,pin:p.name})));
+      }else{
+        const a=pts[0],b=pts[pts.length-1];const hd=header(pts.length);hd.position.set((a.x+b.x)/2,(a.y+b.y)/2,1.6);hd.rotation.z=Math.atan2(b.y-a.y,b.x-a.x);pg.add(hd);
+        const{g,anchors}=moduleModel(c);const Wm=Math.max(num(c.W),c.pinos.length*2.54+1.5);g.position.set(modX+num(c.L)/2,offY-Wm/2,0);offY-=Wm+16;root.add(g);
+        pl.pins.forEach((p,i)=>{const from=hxy(p.gx,p.gy).setZ(1.6+2.5+6);const n=netOf(c.id,p.name);const hex=n?wireHex(n.cor):'#9aabb3';
+          g.updateMatrixWorld(true);const to=new THREE.Vector3();anchors[i]&&anchors[i].getWorldPosition(to);
+          const pgFrom=from.clone().add(new THREE.Vector3(0,0,6));pg.updateMatrixWorld(true);
+          const w=wireTube(pg.localToWorld(pgFrom.clone()),to,hex,{lift:10,side:(i-(pts.length-1)/2)*.6,radius:.5});root.add(w);if(n)regNet(n.id,w);
+          [pgFrom,null].forEach(()=>{});root.add(dupont(to));const d2=dupont(pg.localToWorld(from.clone()));root.add(d2)});
+        addAnchors(c,anchors.map(a=>({obj:a,c})));
+      }
+    });
+    Object.entries(r.res||{}).forEach(([id,o])=>{const n=P.nos.find(x=>x.id===id);if(!n)return;const mt=new THREE.MeshStandardMaterial({color:new THREE.Color(wireHex(n.cor)),metalness:.5,roughness:.35,transparent:true});
+      o.paths.forEach(path=>runsOf(path,C).forEach(([a,b])=>{const pa=hxy(a%C,(a/C)|0),pb=hxy(b%C,(b/C)|0);const len=pa.distanceTo(pb)+1.2;const s=mk(new THREE.BoxGeometry(len,1.1,.45),mt,(pa.x+pb.x)/2,(pa.y+pb.y)/2,-.3);s.rotation.z=Math.atan2(pb.y-pa.y,pb.x-pa.x);pg.add(s);regNet(id,s)}));
+      o.fails.forEach(([a,b])=>{const pa=hxy(a%C,(a/C)|0).setZ(1.7),pb=hxy(b%C,(b/C)|0).setZ(1.7);const w=wireTube(pa,pb,wireHex(n.cor),{lift:3,radius:.45});w.position.z=0;pg.add(w);regNet(id,w)})});
+    const flipT=benchFlip?Math.PI:0;pg.rotation.x=flipT;pg.position.z=benchFlip?34:6;
+    side+=`<p class="small muted">${esc(perf.nome)}: trilhas por baixo nas cores dos nós. Use “virar a placa” para ver o lado da solda.</p>`;
+  }
+  // jumpers (modo livre)
+  root.updateMatrixWorld(true);
+  const posOf=a=>{if(a.obj){const v=new THREE.Vector3();a.obj.getWorldPosition(v);return v}const v=a.pos.clone();return B.perfGroup&&usePerf?B.perfGroup.localToWorld(v):v};
+  P.nos.forEach((n,ni)=>{
+    const pts=orderPoints(n);const cands=pts.map(pt=>(anchorsOf[pt.c]||[]).filter(a=>pinMatch(a.pin||a.obj?.userData.pin,pt.p)));
+    B.anchorsByNet[n.id]=[];
+    let prev=null;
+    pts.forEach((pt,i)=>{const cs=cands[i];if(!cs.length){prev=null;return}
+      let best=cs[0];if(prev){let bd=1e9;cs.forEach(a=>{const d=posOf(a).distanceTo(posOf(prev));if(d<bd){bd=d;best=a}})}
+      const c=compById(pt.c);const obj=best.obj||Object.assign(new THREE.Object3D(),{});if(!best.obj){obj.position.copy(posOf(best));root.add(obj)}
+      B.anchorsByNet[n.id].push({obj,text:`${short(c)} · ${pt.p}`});
+      const offP=B.protoOff||[];
+      if(prev&&!usePerf&&(!useProto||offP.includes(best.c.id)||offP.includes(prev.c.id))){const a=posOf(prev),b=posOf(best);const w=wireTube(a.clone().setZ(a.z+8),b.clone().setZ(b.z+8),wireHex(n.cor),{side:((ni%5)-2)*2.2});root.add(w);regNet(n.id,w);root.add(dupont(a));root.add(dupont(b))}
+      prev=best});
+  });
+  // painel
+  const nets=[...P.nos].sort((x,y)=>({energia:0,terra:1,sinal:2}[x.tipo]-{energia:0,terra:1,sinal:2}[y.tipo]));
+  $('#benchSide').innerHTML=`<h3>Nós</h3>${side}<ul class="netlist">${nets.map(n=>`<li><button data-bnet="${n.id}" aria-pressed="${benchSel===n.id}">${shapeIcon(n.tipo,hexOf(n.cor),16)}<span style="flex:1"><b>${esc(n.nome)}</b> <span class="small muted">· fio ${n.cor}</span></span><span class="small muted">${n.pontos.length} pinos</span></button></li>`).join('')}</ul>
+    <p class="small muted">${P.comps.filter(c=>c.papel!=='pcb').length} peças · ${P.nos.reduce((s,n)=>s+Math.max(0,n.pontos.length-1),0)} ligações. Os arcos dos fios são só para enxergar; o comprimento sugerido está em Ligar.</p>
+    ${P.exemplo?'<div class="alert small">Projeto de exemplo: pinos ilustrativos.</div>':''}`;
+  if(refit)fitBench();
+  setBenchSel(benchSel&&P.nos.find(n=>n.id===benchSel)?benchSel:null);
+}
+function fitBench(){const bb=new THREE.Box3().setFromObject(B.root);if(bb.isEmpty())return;const c=bb.getCenter(new THREE.Vector3()),s=bb.getSize(new THREE.Vector3());const d=Math.max(s.x,s.y,40)*1.25;
+  B.ctr.target.copy(c);B.cam.position.set(c.x+d*.35,c.y-d*.95,c.z+d*.85);B.cam.near=1;B.cam.far=d*30;B.cam.updateProjectionMatrix()}
+$('#benchSide').addEventListener('click',e=>{const b=e.target.closest('[data-bnet]');if(b)setBenchSel(benchSel===b.dataset.bnet?null:b.dataset.bnet)});
+document.querySelectorAll('[data-bm]').forEach(b=>b.onclick=()=>{benchMode=b.dataset.bm;document.querySelectorAll('[data-bm]').forEach(x=>x.setAttribute('aria-pressed',x===b));if(B)buildBench(true)});
+$('#benchReset').onclick=()=>B&&fitBench();
+$('#benchFlip').onclick=()=>{benchFlip=!benchFlip;if(!B?.perfGroup)return;const pg=B.perfGroup;const t0=performance.now(),r0=pg.rotation.x,z0=pg.position.z,r1=benchFlip?Math.PI:0,z1=benchFlip?34:6;
+  const reduce=matchMedia('(prefers-reduced-motion: reduce)').matches;
+  (function anim(t){const k=reduce?1:Math.min(1,(t-t0)/700);const e=k<.5?2*k*k:1-Math.pow(-2*k+2,2)/2;pg.rotation.x=r0+(r1-r0)*e;pg.position.z=z0+(z1-z0)*e+Math.sin(e*Math.PI)*25;if(k<1)requestAnimationFrame(anim)})(t0)};
+
+
+/* protoboard 830 furos: 63 colunas; linhas a–e (0–4) e f–j (7–11); trilhos + e − em cima e embaixo */
+const BB={cols:63};
+const bbY=r=>(5.5-r)*HOLE; // r: 0..11 (a..j), trilhos: -3 (−), -2 (+) em cima; 13 (+), 14 (−) embaixo
+const bbX=c=>(c-(BB.cols-1)/2)*HOLE;
+function protoBoard(){
+  const g=new THREE.Group();const body=sm('bb',{color:0xf2f1ec,roughness:.8});
+  const yTop=bbY(-3)+4,yBot=bbY(14)-4;const H=8.5;
+  g.add(bx(BB.cols*HOLE+8,yTop-yBot,H,body,0,(yTop+yBot)/2,H/2));
+  g.add(bx(BB.cols*HOLE+8,2.2,.6,sm('bbgap',{color:0xd9d7cf,roughness:.9}),0,(bbY(4)+bbY(7))/2,H+.05));
+  const rows=[-3,-2,0,1,2,3,4,7,8,9,10,11,13,14];const im=new THREE.InstancedMesh(new THREE.BoxGeometry(1,1,.3),M().hole,rows.length*BB.cols);const o=new THREE.Object3D();let i=0;
+  rows.forEach(r=>{for(let c=0;c<BB.cols;c++){if((r<0||r>12)&&c%6===5){continue}o.position.set(bbX(c),bbY(r),H+.02);o.updateMatrix();im.setMatrixAt(i++,o.matrix)}});im.count=i;g.add(im);
+  [[-3,0x2b6fd6],[-2,0xd8342c],[13,0xd8342c],[14,0x2b6fd6]].forEach(([r,col])=>{const y=bbY(r)+(r<0?(r===-3?1.9:-1.9):(r===13?1.9:-1.9));g.add(bx(BB.cols*HOLE,.5,.1,sm('rail'+col,{color:col}),0,y,H+.06))});
+  const lbl=(t,x,y)=>{const m=new THREE.Mesh(new THREE.PlaneGeometry(3,2.4),new THREE.MeshBasicMaterial({map:labelTex(t,'#f2f1ec','#7a7a74',64,52),transparent:true}));m.position.set(x,y,H+.07);g.add(m)};
+  'abcde'.split('').forEach((t,i)=>lbl(t,bbX(-1)-1.5,bbY(i)));'fghij'.split('').forEach((t,i)=>lbl(t,bbX(-1)-1.5,bbY(7+i)));
+  return{g,H};
+}
+function buildProto(root,regNet,addAnchors,netOf){
+  const{g:board,H}=protoBoard();root.add(board);
+  const used=new Set(),blocked=new Set();const key=(c,r)=>c+','+r;
+  const pinStrip={};const offAnch={};const offBoard=[];let col=2;const notes=[];
+  const placas=P.comps.filter(c=>c.papel==='placa'),mods=P.comps.filter(c=>c.papel==='modulo');
+  const pinTop=(c,r)=>new THREE.Vector3(bbX(c),bbY(r),H);
+  const pushStrip=(c,nm,o)=>(pinStrip[c.id+'|'+nm]=pinStrip[c.id+'|'+nm]||[]).push(o);
+  // placa sobre a divisão central, só se sobrar furo livre dos dois lados
+  placas.forEach(c=>{
+    const r1=c.fp?.r1||[],r2=c.fp?.r2||[];const gap=c.fp?.gap|0;const n=Math.max(r1.length,r2.length);const W=num(c.W);
+    const lo=Math.max(0,7-gap),hi=Math.min(4,11-gap);let best=null;
+    for(let ra=lo;ra<=hi;ra++){const rb=ra+gap;const cyc=(bbY(ra)+bbY(rb))/2;const freeR=rows=>rows.filter(r=>Math.abs(bbY(r)-cyc)>W/2+.3);
+      const t=freeR([0,1,2,3,4]).filter(r=>r!==ra).length,bt=freeR([7,8,9,10,11]).filter(r=>r!==rb).length;const sc=Math.min(t,bt);if(!best||sc>best.sc)best={ra,rb,sc,cyc}}
+    if(!n||!best||best.sc<1||col+n>BB.cols){offBoard.push(c);notes.push(!n?`${c.nome.split(/[ (]/)[0]}: falta a pinagem física (etapa 1).`:`${c.nome.split(/[ (]/)[0]} é larga demais: em cima da protoboard ela cobre os furos livres. Fica ao lado, com jumpers fêmea–macho nos pinos dela (ou use duas protoboards lado a lado).`);return}
+    const{ra,rb,cyc}=best;
+    const{g}=espModel(c,{rowSign:1,pinsDown:true});g.position.set(bbX(col+(n-1)/2),cyc,H+2.5+.2);root.add(g);
+    for(let cc=col;cc<col+n;cc++)for(const r of[0,1,2,3,4,7,8,9,10,11])if(Math.abs(bbY(r)-cyc)<=W/2+.3)blocked.add(key(cc,r));
+    r1.forEach((nm,i)=>{used.add(key(col+i,ra));pushStrip(c,nm,{col:col+i,row:ra,half:0})});
+    r2.forEach((nm,i)=>{used.add(key(col+i,rb));pushStrip(c,nm,{col:col+i,row:rb,half:1})});
+    addAnchors(c,[...r1.map((nm,i)=>({pos:pinTop(col+i,ra).setZ(H+12),pin:nm,c})),...r2.map((nm,i)=>({pos:pinTop(col+i,rb).setZ(H+12),pin:nm,c}))]);
+    col+=n+2;
+  });
+  // módulos: barra na linha a (corpo sobre o trilho de cima) ou na linha j
+  let colTop=col,colBot=col;
+  mods.forEach(c=>{
+    const n=Math.max(c.pinos.length,1);const span=Math.max(n,Math.ceil(Math.max(num(c.W),n*2.54+1.5)/HOLE));
+    let half,c0;if(colTop+span<=BB.cols){half=0;c0=colTop;colTop+=span+2}else if(colBot+span<=BB.cols){half=1;c0=colBot;colBot+=span+2}else{offBoard.push(c);notes.push(`${c.nome.split(/[ (]/)[0]}: não coube na protoboard, fica ao lado.`);return}
+    const row=half?11:0;const cStart=c0+Math.floor((span-n)/2);
+    const{g}=moduleModel(c,{pinsDown:true});g.rotation.z=half?-Math.PI/2:Math.PI/2;
+    const L=num(c.L);const p0=pinTop(cStart,row);const lp=new THREE.Vector3(-L/2+1.9,((n-1)/2)*2.54,0).applyAxisAngle(new THREE.Vector3(0,0,1),g.rotation.z);
+    g.position.set(p0.x-lp.x,p0.y-lp.y,H+2.5+.2);root.add(g);
+    const colOf=i=>half?cStart+(n-1-i):cStart+i;
+    for(let cc=c0;cc<c0+span;cc++)(half?[13,14]:[-3,-2]).forEach(r=>blocked.add(key(cc,r)));
+    c.pinos.forEach((nm,i)=>{used.add(key(colOf(i),row));pushStrip(c,nm,{col:colOf(i),row,half})});
+    addAnchors(c,c.pinos.map((nm,i)=>({pos:pinTop(colOf(i),row).setZ(H+10),pin:nm,c})));
+  });
+  // fora da protoboard: placas embaixo (pinos para cima), módulos à direita
+  let px=bbX(0)-4,mx=bbX(BB.cols)+30;
+  offBoard.forEach(c=>{const isB=c.papel==='placa';const{g,anchors}=isB?espModel(c):moduleModel(c);
+    if(isB){g.position.set(px+num(c.L)/2,bbY(14)-6-24-num(c.W)/2,0);px+=num(c.L)+20}else{g.position.set(mx+num(c.L)/2,0,0);mx+=num(c.L)+20}
+    root.add(g);g.updateMatrixWorld(true);offAnch[c.id]=anchors.map(a=>({obj:a,pin:a.userData.pin}));addAnchors(c,anchors.map(a=>({obj:a,c})))});
+  const wp=o=>{const v=new THREE.Vector3();o.getWorldPosition(v);return v};
+  const pw=P.nos.find(n=>n.tipo==='energia'),gnd=P.nos.find(n=>n.tipo==='terra');
+  const railOf=id=>id===pw?.id?{top:-2,bot:13}:id===gnd?.id?{top:-3,bot:14}:null;
+  const free=(c0,half,toward)=>{const rows=half?[7,8,9,10,11]:[0,1,2,3,4];const order=toward==='edge'?(half?rows.slice().reverse():rows):(half?rows:rows.slice().reverse());for(const r of order){const k=key(c0,r);if(!used.has(k)&&!blocked.has(k)){used.add(k);return r}}return null};
+  const railUsed=new Set();const railHole=(r,c0)=>{for(let d=0;d<BB.cols;d++)for(const cc of[c0+d,c0-d]){if(cc<0||cc>=BB.cols||cc%6===5)continue;const k=key(cc,r);if(!railUsed.has(k)&&!blocked.has(k)){railUsed.add(k);return cc}}return c0};
+  let jumpers=0,covered=0;
+  const jumper=(a,b,hex,id,flat)=>{const d=a.distanceTo(b);const w=wireTube(a,b,hex,flat?{lift:Math.min(10,2+d*.06),radius:.5,flat:true}:{lift:10,radius:.55});root.add(w);if(id)regNet(id,w);jumpers++};
+  const endOf=(pt)=>{const ks=Object.keys(pinStrip).filter(k=>k.startsWith(pt.c+'|')&&pinMatch(k.slice(pt.c.length+1),pt.p));if(ks.length)return{kind:'strip',opts:ks.flatMap(k=>pinStrip[k])};
+    const oa=(offAnch[pt.c]||[]).filter(a=>pinMatch(a.pin,pt.p));if(oa.length)return{kind:'off',opts:oa};return null};
+  const stripHole=(o,toward)=>{const r=free(o.col,o.half,toward);if(r===null){covered++;return pinTop(o.col,o.row)}return pinTop(o.col,r)};
+  P.nos.forEach(n=>{
+    const hex=wireHex(n.cor);const rail=railOf(n.id);const ends=n.pontos.map(endOf).filter(Boolean);
+    if(rail){
+      const halves=new Set();
+      ends.forEach(e=>{
+        if(e.kind==='strip'){const o=e.opts.slice().sort((a,b)=>(a.half===0?a.row:11-a.row)-(b.half===0?b.row:11-b.row))[0];const rr=o.half?rail.bot:rail.top;halves.add(o.half);
+          jumper(stripHole(o,'edge'),pinTop(railHole(rr,o.col),rr),hex,n.id,true)}
+        else{const a=e.opts.map(x=>({x,p:wp(x.obj)})).sort((u,v)=>u.p.y-v.p.y)[0];const below=a.p.y<0;const rr=below?rail.bot:rail.top;halves.add(below?1:0);
+          const cc=Math.max(0,Math.min(BB.cols-1,Math.round(a.p.x/HOLE+(BB.cols-1)/2)));root.add(dupont(a.p));jumper(a.p.clone().setZ(a.p.z+8),pinTop(railHole(rr,cc),rr),hex,n.id,false)}
+      });
+      if(halves.size===2){const c0=BB.cols-1;jumper(pinTop(railHole(rail.top,c0),rail.top),pinTop(railHole(rail.bot,c0),rail.bot),hex,n.id,true);notes.push(`Jumper ${n.cor} na ponta direita liga o trilho de ${n.nome} de cima com o de baixo.`)}
+    }else{
+      let prev=null;
+      ends.forEach(e=>{let cur;
+        if(e.kind==='strip'){let o=e.opts[0];if(prev){let bd=1e9;e.opts.forEach(x=>{const d=pinTop(x.col,x.row).distanceTo(prev.p);if(d<bd){bd=d;o=x}})}cur={on:true,p:stripHole(o,'center')}}
+        else{let a=e.opts[0];if(prev){let bd=1e9;e.opts.forEach(x=>{const d=wp(x.obj).distanceTo(prev.p);if(d<bd){bd=d;a=x}})}const p=wp(a.obj);root.add(dupont(p));cur={on:false,p:p.clone().setZ(p.z+8)}}
+        if(prev)jumper(prev.p,cur.p,hex,n.id,prev.on&&cur.on);
+        prev=cur});
+    }
+  });
+  if(covered)notes.push(`${covered} ligação(ões) cairiam embaixo de uma peça: confira na vista.`);
+  B.protoOff=[];
+  return `<p class="small muted">Protoboard de 830 furos. Cada coluna de 5 furos (a–e ou f–j) é um nó: o pino e o jumper dividem a mesma coluna. ${pw?`<b style="color:#ff5a4e">+</b> = ${esc(pw.nome)}`:''} ${gnd?`· <b style="color:#4ea8ff">−</b> = ${esc(gnd.nome)}`:''}. ${jumpers} jumpers.</p>${notes.map(t=>`<div class="alert small">${esc(t)}</div>`).join('')}`;
+}
+/* ============ EXPORTAR ============ */
+const slugify=s=>String(s).toLowerCase().normalize('NFD').replace(/[̀-ͯ]/g,'').replace(/[^a-z0-9]+/g,'-').replace(/^-|-$/g,'')||'projeto';
+const fpName=c=>String(c.nome).normalize('NFD').replace(/[̀-ͯ]/g,'').replace(/[^A-Za-z0-9.+-]+/g,'_').replace(/^_|_$/g,'');
+const q=s=>'"'+String(s).replace(/\\/g,'\\\\').replace(/"/g,'\\"')+'"';
+const f2=v=>(Math.round(v*1000)/1000).toString();
+function refsOf(){const m={};let u=0,k=0;P.comps.filter(c=>c.papel!=='pcb').forEach(c=>{m[c.id]=c.papel==='placa'?'U'+(++u):'M'+(++k)});return m}
+function compPins(c){ // [{num,name}]
+  if(c.papel==='placa'){const r1=c.fp?.r1||[],r2=c.fp?.r2||[];return[...r1,...r2].map((nm,i)=>({num:String(i+1),name:nm}))}
+  return c.pinos.map((nm,i)=>({num:String(i+1),name:nm}));
+}
+function libPads(c){ // posições na biblioteca (KiCad, y para baixo), centradas
+  if(c.papel==='placa'){const r1=c.fp?.r1||[],r2=c.fp?.r2||[],g=(c.fp?.gap||10)*HOLE;const out=[];
+    r1.forEach((nm,i)=>out.push({x:(i-(r1.length-1)/2)*HOLE,y:-g/2}));r2.forEach((nm,i)=>out.push({x:(i-(r2.length-1)/2)*HOLE,y:g/2}));
+    return{pads:out,w:Math.max(num(c.L),r1.length*HOLE),h:Math.max(num(c.W),g+HOLE)}}
+  const n=c.pinos.length;return{pads:c.pinos.map((nm,i)=>({x:(i-(n-1)/2)*HOLE,y:0})),w:n*HOLE,h:HOLE};
+}
+const fpText=(ref,val,h)=>`(fp_text reference ${q(ref)} (at 0 ${f2(-h/2-1.5)}) (layer "F.SilkS") (effects (font (size 1 1) (thickness 0.15))))
+    (fp_text value ${q(val)} (at 0 ${f2(h/2+1.5)}) (layer "F.Fab") (effects (font (size 1 1) (thickness 0.15))))`;
+const fpRects=(x1,y1,x2,y2)=>`(fp_rect (start ${f2(x1)} ${f2(y1)}) (end ${f2(x2)} ${f2(y2)}) (stroke (width 0.12) (type solid)) (fill none) (layer "F.SilkS"))
+    (fp_rect (start ${f2(x1-.25)} ${f2(y1-.25)}) (end ${f2(x2+.25)} ${f2(y2+.25)}) (stroke (width 0.05) (type solid)) (fill none) (layer "F.CrtYd"))`;
+const padTxt=(num_,x,y,net)=>`(pad ${q(num_)} thru_hole ${num_==='1'?'rect':'circle'} (at ${f2(x)} ${f2(y)}) (size 1.7 1.7) (drill 1) (layers "*.Cu" "*.Mask")${net?` (net ${net[0]} ${q(net[1])})`:''})`;
+function kicadMod(c){
+  const{pads,w,h}=libPads(c);const pins=compPins(c);
+  return `(footprint ${q(fpName(c))} (version 20221018) (generator noano) (layer "F.Cu")
+  (descr ${q(c.nome+' - gerado pelo nó a nó; medidas aproximadas, confira')})
+  (attr through_hole)
+  ${fpText('REF**',fpName(c),h)}
+  ${fpRects(-w/2,-h/2,w/2,h/2)}
+  ${pads.map((p,i)=>padTxt(pins[i].num,p.x,p.y,null)).join('\n  ')}
+)\n`;
+}
+function netTable(){const nets=[];const used=new Set();P.nos.forEach(n=>{let nm=n.nome||'N';let k=2;while(used.has(nm))nm=n.nome+'_'+(k++);used.add(nm);nets.push({id:n.id,name:nm,n})});return nets}
+function padNet(c,pinName,nets){const nt=nets.find(x=>x.n.pontos.some(pt=>pt.c===c.id&&pinMatch(pinName,pt.p)));return nt?[nets.indexOf(nt)+1,nt.name]:null}
+function kicadPcb(){
+  const refs=refsOf();const nets=netTable();const perf=perfComp();const r=perf&&Object.keys(P.perf.pos||{}).length?routePerf():null;
+  const X0=100,Y0=100;let out=[];let tracks=[];let edge;let outside=X0;
+  const C=perf?perf.cols|0:0,R=perf?perf.rows|0:0;const ox=perf?(num(perf.L)-(C-1)*HOLE)/2:0,oy=perf?(num(perf.W)-(R-1)*HOLE)/2:0;
+  const hp=(gx,gy)=>[X0+ox+gx*HOLE,Y0+oy+gy*HOLE];
+  if(r){edge=[X0,Y0,X0+num(perf.L),Y0+num(perf.W)];outside=X0+num(perf.L)+15}else{edge=null}
+  const placedIds=new Set(r?r.parts.map(p=>p.c.id):[]);
+  let cursorY=Y0;
+  P.comps.filter(c=>c.papel!=='pcb').forEach(c=>{
+    const pins=compPins(c);if(!pins.length)return;let ax,ay,padsAbs,bb;
+    if(r&&placedIds.has(c.id)){const pl=r.parts.find(p=>p.c.id===c.id);padsAbs=pl.pins.map(p=>hp(p.gx,p.gy));
+      const bxs=pl.body.map(b=>hp(b[0],b[1]));bb=[Math.min(...bxs.map(b=>b[0]))-1.27,Math.min(...bxs.map(b=>b[1]))-1.27,Math.max(...bxs.map(b=>b[0]))+1.27,Math.max(...bxs.map(b=>b[1]))+1.27]}
+    else{const{pads,w,h}=libPads(c);const cx=outside+w/2,cyy=cursorY+h/2;padsAbs=pads.map(p=>[cx+p.x,cyy+p.y]);bb=[cx-w/2,cyy-h/2,cx+w/2,cyy+h/2];cursorY+=h+8}
+    ax=(bb[0]+bb[2])/2;ay=(bb[1]+bb[3])/2;const h=bb[3]-bb[1];
+    out.push(`  (footprint ${q('noano:'+fpName(c))} (layer "F.Cu") (at ${f2(ax)} ${f2(ay)})
+    ${fpText(refs[c.id],c.nome,h)}
+    ${fpRects(bb[0]-ax,bb[1]-ay,bb[2]-ax,bb[3]-ay)}
+    ${pins.map((p,i)=>padTxt(p.num,padsAbs[i][0]-ax,padsAbs[i][1]-ay,padNet(c,p.name,nets))).join('\n    ')}
+  )`)});
+  if(r)Object.entries(r.res||{}).forEach(([id,o])=>{const ni=nets.findIndex(x=>x.id===id);if(ni<0)return;o.paths.forEach(path=>runsOf(path,C).forEach(([a,b])=>{const pa=hp(a%C,(a/C)|0),pb=hp(b%C,(b/C)|0);tracks.push(`  (segment (start ${f2(pa[0])} ${f2(pa[1])}) (end ${f2(pb[0])} ${f2(pb[1])}) (width 1) (layer "B.Cu") (net ${ni+1}))`)}))});
+  const layers=[[0,'F.Cu','signal'],[31,'B.Cu','signal'],[32,'B.Adhes','user','B.Adhesive'],[33,'F.Adhes','user','F.Adhesive'],[34,'B.Paste','user'],[35,'F.Paste','user'],[36,'B.SilkS','user','B.Silkscreen'],[37,'F.SilkS','user','F.Silkscreen'],[38,'B.Mask','user'],[39,'F.Mask','user'],[40,'Dwgs.User','user','User.Drawings'],[41,'Cmts.User','user','User.Comments'],[44,'Edge.Cuts','user'],[45,'Margin','user'],[46,'B.CrtYd','user','B.Courtyard'],[47,'F.CrtYd','user','F.Courtyard'],[48,'B.Fab','user'],[49,'F.Fab','user']];
+  return `(kicad_pcb (version 20221018) (generator noano)
+  (general (thickness 1.6))
+  (paper "A4")
+  (layers
+${layers.map(l=>`    (${l[0]} ${q(l[1])} ${l[2]}${l[3]?' '+q(l[3]):''})`).join('\n')}
+  )
+  (setup (pad_to_mask_clearance 0))
+  (net 0 "")
+${nets.map((n,i)=>`  (net ${i+1} ${q(n.name)})`).join('\n')}
+${out.join('\n')}
+${edge?`  (gr_rect (start ${f2(edge[0])} ${f2(edge[1])}) (end ${f2(edge[2])} ${f2(edge[3])}) (stroke (width 0.1) (type default)) (fill none) (layer "Edge.Cuts"))`:''}
+${tracks.join('\n')}
+)\n`;
+}
+function kicadNet(){
+  const refs=refsOf();const nets=netTable();const d=new Date().toISOString().slice(0,19).replace('T',' ');
+  const comps=P.comps.filter(c=>c.papel!=='pcb');
+  return `(export (version "E")
+  (design (source ${q(slugify(P.nome)+'.noano')}) (date ${q(d)}) (tool "no a no"))
+  (components
+${comps.map(c=>`    (comp (ref ${q(refs[c.id])}) (value ${q(c.nome)}) (footprint ${q('noano:'+fpName(c))}))`).join('\n')})
+  (libparts)
+  (libraries)
+  (nets
+${nets.map((nt,i)=>{const nodes=[];comps.forEach(c=>compPins(c).forEach(p=>{if(nt.n.pontos.some(pt=>pt.c===c.id&&pinMatch(p.name,pt.p)))nodes.push(`      (node (ref ${q(refs[c.id])}) (pin ${q(p.num)}) (pinfunction ${q(p.name)}))`)}));
+  return `    (net (code ${q(i+1)}) (name ${q(nt.name)})\n${nodes.join('\n')})`}).join('\n')}))\n`;
+}
+function gpioNum(pin){const parts=String(pin).split('/');for(const a of parts){const m=pnorm(a).match(/^\d{1,2}$/);if(m)return +m[0]}return null}
+function pinosH(){
+  const lines=[`// pinos.h — gerado pelo nó a nó a partir dos nós do projeto "${P.nome}"`,`// ${new Date().toLocaleDateString('pt-BR')}. Confira com o seu circuito antes de usar.`,`#pragma once`,''];
+  const sinais=[],outros=[];
+  P.nos.forEach(n=>{const desc=n.pontos.map(pt=>{const c=compById(pt.c);return `${c?c.nome.split(/[ (]/)[0]:'?'} ${pt.p}`}).join(' -> ');
+    const gp=n.pontos.filter(pt=>compById(pt.c)?.papel==='placa').map(pt=>gpioNum(pt.p)).filter(v=>v!==null);
+    if(n.tipo!=='sinal'||!gp.length){outros.push(`//   ${n.nome.padEnd(8)} (${n.tipo}, fio ${n.cor}): ${desc}`);return}
+    const nm='PINO_'+n.nome.normalize('NFD').replace(/[̀-ͯ]/g,'').toUpperCase().replace(/[^A-Z0-9]+/g,'_').replace(/^_|_$/g,'');
+    gp.forEach((g,i)=>sinais.push(`#define ${(nm+(gp.length>1?'_'+(i+1):'')).padEnd(18)} ${String(g).padStart(2)}   // fio ${n.cor}: ${desc}`))});
+  return lines.concat(sinais.length?sinais:['// (nenhum pino de sinal com GPIO definido)'],['','// Alimentação e outros nós (sem #define):'],outros).join('\n')+'\n';
+}
+function inoSkeleton(slug){return `// ${P.nome} — esqueleto gerado pelo nó a nó\n#include "pinos.h"\n\nvoid setup() {\n  Serial.begin(115200);\n  // configure aqui os pinos de pinos.h (pinMode, bibliotecas...)\n}\n\nvoid loop() {\n}\n`}
+function meshVolume(pos){let v=0;for(let i=0;i<pos.length;i+=9){const ax=pos[i],ay=pos[i+1],az=pos[i+2],bx_=pos[i+3],by=pos[i+4],bz=pos[i+5],cx=pos[i+6],cy_=pos[i+7],cz=pos[i+8];v+=ax*(by*cz-bz*cy_)-ay*(bx_*cz-bz*cx)+az*(bx_*cy_-by*cx)}return Math.abs(v/6)}
+function bomRows(){
+  const rows=[];const add=(item,qtd,det,tem)=>rows.push({item,qtd,det,tem:!!tem});
+  const has=re=>Object.entries(MAT.tenho).some(([k,v])=>v&&re.test(k));
+  const groups={};P.comps.forEach(c=>{const k=c.nome;(groups[k]=groups[k]||{c,n:0}).n++});
+  Object.values(groups).forEach(({c,n})=>add(c.nome,n,c.papel==='pcb'?`${c.cols}×${c.rows} furos`:`${fmt(c.L)}×${fmt(c.W)} mm${c.aprox?' (aprox.)':''}`,c.papel==='pcb'&&has(new RegExp(fmt(c.L/10).replace(',','[.,]')+'|'+c.nome,'i'))));
+  const perf=perfComp();const r=perf&&Object.keys(P.perf.pos||{}).length?routePerf():null;
+  if(r){
+    r.parts.forEach(pl=>{const c=pl.c;const pos=P.perf.pos[c.id];
+      if(c.papel==='placa'){[c.fp?.r1||[],c.fp?.r2||[]].forEach(row=>{if(row.length)add(`Barra de pinos fêmea 1×${row.length}`,1,`soquete para ${c.nome.split(/[ (]/)[0]} (ele sai da placa)`,has(/fêmea/i)&&has(/barra/i))})}
+      else{add(`Barra de pinos ${pos.modo==='direto'?'macho':'macho'} 1×${c.pinos.length}`,1,`para ${c.nome.split(/[ (]/)[0]}${pos.modo==='direto'?' (soldado direto)':''}`,has(/barra de pinos macho/i));
+        if(pos.modo!=='direto')add(`Jumper fêmea–fêmea`,c.pinos.length,`cabo da placa até ${c.nome.split(/[ (]/)[0]} (~10 cm), ou carcaça Dupont de ${c.pinos.length} vias`,has(/fêmea–fêmea/i))}});
+    let holes=0,fails=0;Object.values(r.res).forEach(o=>{o.paths.forEach(p=>runsOf(p,r.C).forEach(([a,b,k])=>{if(k>1)holes+=k}));fails+=o.fails.length});
+    if(holes)add('Fio rígido desencapado (ou pernas de resistor)',1,`~${Math.ceil(holes*HOLE*1.3/10)} cm no total, para as trilhas`,has(/rígido|cabinho/i));
+    if(fails)add('Fio fino isolado (wire-wrap AWG 30)',1,`${fails} ligação(ões) por cima da placa`,has(/wire-wrap/i));
+  }else{
+    const lay=layoutCase();const byColor={};
+    P.nos.forEach(n=>{const pts=orderPoints(n);for(let i=1;i<pts.length;i++){const L=wireLen(pts[i-1],pts[i],lay)||10;const k=n.cor;(byColor[k]=byColor[k]||[]).push(L)}});
+    Object.entries(byColor).forEach(([cor,ls])=>add(`Jumper fêmea–fêmea ${cor}`,ls.length,`comprimentos: ${ls.map(l=>l+' cm').join(', ')}`,has(/fêmea–fêmea/i)));
+    const splits=P.nos.filter(n=>n.pontos.length>=3);if(splits.length)add('Jumper em Y ou mini protoboard (hub)',splits.length,`para ${splits.map(n=>n.nome).join(', ')}`,has(/jumper em y|mini protoboard/i));
+  }
+  add('Estanho com fluxo 0,8 mm',1,'',has(/estanho/i));add('Termo-retrátil fino',1,'para emendas',has(/termo/i));
+  const lay=layoutCase();if(lay){let vol=0;['base','tampa'].forEach(k=>{const pt=k==='tampa'?buildLid(lay):buildBase(lay);vol+=meshVolume(meshUnion(pt.S,pt.Hh))});add('Filamento PLA',1,`≈ ${Math.round(vol/1000*1.24*0.75)} g para base e tampa (estimativa)`,false)}
+  const merged=[];rows.forEach(r=>{const m=merged.find(x=>x.item===r.item&&x.det===r.det);if(m)m.qtd+=r.qtd;else merged.push({...r})});
+  return merged;
+}
+const csvCell=v=>/[;"\n]/.test(String(v))?'"'+String(v).replace(/"/g,'""')+'"':String(v);
+function bomCSV(){return '﻿'+['Item;Quantidade;Detalhe;Já tenho?',...bomRows().map(r=>[r.item,r.qtd,r.det,r.tem?'sim':''].map(csvCell).join(';'))].join('\r\n')+'\r\n'}
+function diagramSVG(){renderDiagram();const s=$('#diagram').cloneNode(true);const vb=s.getAttribute('viewBox').split(' ');s.setAttribute('xmlns','http://www.w3.org/2000/svg');s.setAttribute('width',vb[2]);s.setAttribute('height',vb[3]);s.removeAttribute('style');s.removeAttribute('class');
+  s.insertAdjacentHTML('afterbegin',`<style>text{font-family:ui-monospace,Menlo,Consolas,monospace;font-size:12px}</style><rect width="100%" height="100%" fill="#0e161a"/>`);return '<?xml version="1.0" encoding="UTF-8"?>\n'+s.outerHTML}
+function leiaMe(slug,hasCode){
+  const perf=perfComp();
+  return `# ${P.nome}\n\nPacote gerado pelo **nó a nó** em ${new Date().toLocaleDateString('pt-BR')}.${P.exemplo?'\n\n> Projeto de EXEMPLO: os pinos são ilustrativos.':''}\n\n## Arquivos\n\n- \`kicad/${slug}.kicad_pcb\`: placa para o KiCad (7 ou mais novo).${perf&&Object.keys(P.perf?.pos||{}).length?` Já vem no tamanho da ${perf.nome}, com as peças nos furos e as trilhas no lado de baixo (B.Cu). Ligações que não couberam por baixo aparecem como linhas de “ratsnest”: são os fios por cima.`:' As peças vêm enfileiradas; posicione e trace no KiCad.'}\n- \`kicad/${slug}.net\`: netlist (lista de ligações).\n- \`kicad/noano.pretty/\`: footprints das peças (medidas aproximadas). No KiCad: Preferências → Gerenciar bibliotecas de footprints → adicionar a pasta com o apelido **noano**.\n- \`lista-de-compras.csv\`: abre no Excel/Sheets (separador “;”).\n- \`stl/\`: gabarito de teste, base e tampa do case (PLA, 0,2 mm, sem suporte). Imprima o gabarito antes.\n- \`${slug}/\`: ${hasCode?`seu código (\`${slug}.ino\`) e`:'um esqueleto de código e'} \`pinos.h\` com os pinos de cada nó. Abra a pasta na Arduino IDE.\n- \`diagrama-nos.svg\`: o mapa de nós.\n- \`projeto.json\`: os dados do projeto.\n\n## Antes de soldar\n\n1. Confira a pinagem física da placa com a serigrafia.\n2. Teste continuidade de cada nó com o multímetro; 3V3 e GND não podem apitar entre si.\n3. Meça as peças: as medidas do case vêm do que foi digitado no site.\n`;
+}
+async function buildPackage(){
+  const slug=slugify(P.nome);const enc=new TextEncoder();const files=[];const add=(name,data)=>files.push({name:`${slug}/${name}`,data:typeof data==='string'?enc.encode(data):new Uint8Array(data)});
+  add(`kicad/${slug}.kicad_pcb`,kicadPcb());add(`kicad/${slug}.net`,kicadNet());
+  const seen=new Set();P.comps.filter(c=>c.papel!=='pcb').forEach(c=>{const n=fpName(c);if(seen.has(n))return;seen.add(n);add(`kicad/noano.pretty/${n}.kicad_mod`,kicadMod(c))});
+  add('lista-de-compras.csv',bomCSV());
+  const lay=layoutCase();if(lay)['gabarito','base','tampa'].forEach(k=>add(`stl/${slug}-${k}.stl`,stlFor(k,lay).buf));
+  const hasCode=!!(P.codigo||'').trim();add(`${slug}/${slug}.ino`,hasCode?P.codigo:inoSkeleton(slug));add(`${slug}/pinos.h`,pinosH());
+  add('diagrama-nos.svg',diagramSVG());
+  const pj=JSON.parse(JSON.stringify(P));delete pj.fotos;delete pj.chat;add('projeto.json',JSON.stringify(pj,null,2));
+  add('LEIA-ME.md',leiaMe(slug,hasCode));
+  return{slug,files};
+}
+function renderExport(){
+  const slug=slugify(P.nome);const perf=perfComp();const onPerf=perf&&Object.keys(P.perf?.pos||{}).length;
+  const items=[['kicad/*.kicad_pcb',onPerf?`${esc(perf.nome)} com peças nos furos e trilhas por baixo`:'peças enfileiradas para você posicionar (use a placa perfurada em Ligar para vir com trilhas)'],
+    ['kicad/*.net','netlist: quem liga em quem'],['kicad/noano.pretty/','footprints das suas peças'],['lista-de-compras.csv','peças, jumpers, fios, filamento'],
+    ['stl/','gabarito de teste, base e tampa'],[`${slug}/${slug}.ino + pinos.h`,(P.codigo||'').trim()?'seu código e os pinos de cada nó':'esqueleto de código e os pinos de cada nó'],
+    ['diagrama-nos.svg','o mapa de nós'],['LEIA-ME.md','como abrir cada coisa']];
+  $('#expFiles').innerHTML=items.map(([f,d])=>`<div class="expf"><span style="color:var(--ok)">✓</span><div><code>${esc(f)}</code><div class="small muted">${d}</div></div></div>`).join('');
+  $('#pinsPre').textContent=pinosH();
+  const rows=bomRows();$('#bomTable').innerHTML=`<table class="bom"><tr><th>item</th><th>qtd</th><th>detalhe</th><th></th></tr>${rows.map(r=>`<tr><td>${esc(r.item)}</td><td>${r.qtd}</td><td class="small">${esc(r.det)}</td><td class="small tem">${r.tem?'já tenho':''}</td></tr>`).join('')}</table>`;
+}
+$('#copyPins').onclick=async()=>{try{await navigator.clipboard.writeText(pinosH());$('#copyPins').textContent='copiado ✓'}catch(e){$('#copyPins').textContent='selecione e copie'}};
+$('#expZip').onclick=async()=>{
+  const msg=$('#expMsg');msg.textContent='montando…';
+  try{const{slug,files}=await buildPackage();const blob=makeZip(files);const filename=`${slug}-pacote.zip`;
+    const dl=window.claude?.use?await claude.use('downloads'):null;
+    if(dl)await dl.save({filename,data:blob});else{const a=document.createElement('a');a.href=URL.createObjectURL(blob);a.download=filename;document.body.appendChild(a);a.click();setTimeout(()=>{URL.revokeObjectURL(a.href);a.remove()},1000)}
+    msg.textContent=`${filename} pronto (${files.length} arquivos).`;
+  }catch(e){console.error(e);msg.textContent='Não consegui: '+(e.message||e.code||e)}
+};
 
 /* ============ chat ============ */
 $('#chatBtn').onclick=()=>{$('#chat').hidden=false;renderChat();$('#chatIn').focus()};

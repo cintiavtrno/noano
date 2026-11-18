@@ -4,13 +4,17 @@ Do emaranhado de jumpers ao case impresso. Uma página para organizar projetos c
 
 ## Etapas
 
+0. **Começar por uma ideia**: você descreve o que quer fazer (“tenho um ESP e uma tela, quero animações”); a IA escolhe as peças, priorizando o seu material, monta os nós, escreve o código e diz o que falta comprar.
 1. **Montagem**: placa, módulos, código e fotos da protoboard. A IA lê o código (fonte principal) e confere pelas fotos.
 2. **Nós**: o mapa das ligações. Cada nó é um fio só, mesmo quando chega em vários pinos. Forma pelo tipo (● energia, ■ GND, ◆ sinal), cor de fio sugerida, e um marcador onde o nó se divide em 3 ou mais pontos.
-3. **Ligar**, em três modos:
+3. **Bancada 3D**: a montagem modelada em 3D, em três vistas: protoboard (com trilhos de alimentação e a checagem de quando a placa é larga demais), jumpers soltos e placa perfurada (com as trilhas por baixo e o botão de virar a placa).
+4. **Ligar**, em três modos:
    - *Sem solda*: jumpers em feixe, como num case de acrílico.
    - *Fios soldados*: ordem de solda em corrente ou emenda em Y.
    - *Na placa perfurada*: posiciona as peças nos furos, traça as trilhas e mostra o mapa de solda furo a furo, com vista de baixo espelhada.
-4. **Case 3D**: caixa calculada a partir das medidas das peças (lado a lado, em coluna ou sanduíche). Exporta `.stl` do gabarito de teste, da base e da tampa.
+5. **Case 3D**: caixa calculada a partir das medidas das peças (lado a lado, em coluna ou sanduíche). Exporta `.stl` do gabarito de teste, da base e da tampa.
+
+6. **Exportar**: um .zip com placa (`.kicad_pcb`, com as trilhas da placa perfurada em B.Cu), netlist (`.net`) e footprints para o KiCad; lista de compras (`.csv`); STL do case; o código Arduino com um `pinos.h` gerado a partir dos nós; o diagrama em SVG e um LEIA-ME.
 
 Também tem **Minhas peças** (peças com medidas e pinagem próprias), **Meu material** (o que tenho em casa) e um chat sobre a montagem.
 
@@ -19,7 +23,7 @@ Também tem **Minhas peças** (peças com medidas e pinagem próprias), **Meu ma
 É um único `index.html`, sem build.
 
 - **Dentro do Claude** (artifact): IA, salvamento na conta e download funcionam.
-- **Fora do Claude** (GitHub Pages, Render, abrir o arquivo): diagrama, placa perfurada, case 3D e `.stl` funcionam; os projetos ficam salvos só no navegador. A análise com IA e o chat não funcionam fora do Claude.
+- **Fora do Claude** (GitHub Pages, Render, abrir o arquivo): diagrama, bancada 3D, placa perfurada, case 3D, `.stl` e o pacote de exportação funcionam; os projetos ficam salvos só no navegador. A IA (começar por uma ideia, análise e chat) não funciona fora do Claude.
 
 ## Avisos
 
