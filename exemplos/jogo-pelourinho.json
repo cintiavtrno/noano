@@ -194,10 +194,11 @@
       "lateral": null,
       "fp": null,
       "cols": 24,
-      "rows": 18,
+      "rows": 17,
       "rot": false,
       "incluir": true,
-      "aprox": true
+      "aprox": true,
+      "rotulo": "linhaLetra"
     }
   ],
   "nos": [
