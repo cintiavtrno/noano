@@ -30,3 +30,7 @@ Também tem **Minhas peças** (peças com medidas e pinagem próprias), **Meu ma
 - As medidas das peças vêm aproximadas: meça as suas antes de imprimir.
 - A pinagem física das placas precisa ser conferida com a serigrafia antes de soldar.
 - O case sai com cantos retos e guias de encaixe (sem parafusos).
+
+## Exemplos
+
+- `exemplos/jogo-pelourinho.json`: ESP32-S3 + TFT 1,8" + 2 botões 6×6, com protoboard e placa perfurada 7×5 (todas as trilhas por baixo). No site: **importar** → escolha o arquivo.

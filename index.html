@@ -229,6 +229,7 @@ pre.code{background:#0b1114;border:1px solid var(--line);border-radius:8px;paddi
     <button id="novoProj">+ novo</button>
     <button id="renProj" class="ghost">renomear</button>
     <button id="delProj" class="ghost">apagar</button>
+    <label class="ghost" style="cursor:pointer;border:1px solid var(--line);border-radius:8px;padding:.45em .9em">importar<input type="file" id="importIn" accept=".json,application/json" hidden></label>
     <button id="aiKeyBtn" class="ghost" onclick="openKeyDialog()">IA: configurar</button>
     <span id="saveStatus" aria-live="polite"></span>
   </div>
@@ -461,6 +462,7 @@ const PRESETS={
  'bme280':{nome:'BME280 / BMP280 (I²C)',papel:'modulo',L:15,W:12,H:3,pinos:['VIN','GND','SCL','SDA']},
  'mpu6050':{nome:'MPU-6050 (GY-521)',papel:'modulo',L:21,W:16,H:3,pinos:['VCC','GND','SCL','SDA','XDA','XCL','AD0','INT']},
  'botao12':{nome:'Botão tátil 12×12',papel:'modulo',L:12,W:12,H:8,pinos:['A','B'],janela:{w:12.6,h:12.6,dx:0,dy:0}},
+ 'botao6':{nome:'Botão tátil 6×6 mm (4 pernas)',papel:'modulo',L:6,W:6,H:5,pinos:['A','B'],janela:{w:4,h:4,dx:0,dy:0}},
  'led5':{nome:'LED 5 mm',papel:'modulo',L:6,W:6,H:9,pinos:['+ (ânodo)','− (cátodo)'],janela:{w:5.3,h:5.3,dx:0,dy:0}},
  'buzzer':{nome:'Buzzer 12 mm',papel:'modulo',L:12,W:12,H:9.5,pinos:['+','−']},
  'miniprotoboard':{nome:'Mini protoboard 170 furos (hub de nós)',papel:'modulo',L:47,W:35,H:9,pinos:['fileira A','fileira B','fileira C','fileira D']},
@@ -596,6 +598,10 @@ $('#novoProj').onclick=async()=>{
   P=normalize({id:'p'+uid(),nome,criado:Date.now()});P.comps=[compFromPreset('esp32s3-devkitc')];
   await saveProject(P).catch(()=>{});await refreshProjSel();renderAll();go(1);
 };
+$('#importIn').onchange=async e=>{const f=e.target.files[0];e.target.value='';if(!f)return;
+  try{const d=JSON.parse(await f.text());if(!d||!Array.isArray(d.comps))throw new Error('não parece um projeto do nó a nó');
+    const np=normalize({...d,id:'p'+uid(),criado:Date.now(),fotos:[]});P=np;await saveProject(P).catch(()=>{});await refreshProjSel();renderAll();go(step);
+    $('#saveStatus').textContent='projeto importado ✓'}catch(err){$('#saveStatus').textContent='não consegui importar: '+(err.message||err)}};
 $('#renProj').onclick=async()=>{const nome=await askText('Novo nome',P.nome);if(!nome)return;P.nome=nome;dirty();await refreshProjSel();};
 $('#delProj').onclick=async()=>{
   if(!await askConfirm(`Apagar “${P.nome}” e as fotos dele?`))return;
@@ -1161,8 +1167,11 @@ function pnorm(s){s=String(s).toUpperCase().replace(/\(.*?\)/g,'').replace(/\s+/
   if(['G','GND','TERRA','−','-'].includes(s))return 'GND';if(['3V3','3.3V','3V','3.3','+3V3','+3.3V'].includes(s))return '3V3';if(['5V','+5V','VBUS'].includes(s))return '5V';return s}
 const pinMatch=(fpName,netPin)=>{const t=pnorm(netPin);return String(fpName).split('/').some(a=>pnorm(a)===t)};
 function perfComp(){if(!P.perf)return null;const c=compById(P.perf.id);if(!c||c.papel!=='pcb')return null;return c}
+/* botão 6×6: 4 pernas; A e B são pernas em diagonal (sempre funciona, seja qual for o par ligado por dentro) */
+const BTN6=[['A',0,0],['B',2,3],['—',2,0],['—',0,3]];
 function footprint(c,modo){
   const pins=[],body=[];
+  if(c.tipo==='botao6'){BTN6.forEach(([nm,x,y])=>pins.push({name:nm,x,y}));for(let y=0;y<4;y++)for(let x=0;x<3;x++)body.push([x,y]);return{pins,body}}
   if(c.papel==='placa'){
     const g=Math.max(1,(c.fp?.gap|0)||10),r1=c.fp?.r1||[],r2=c.fp?.r2||[];const n=Math.max(r1.length,r2.length,1);
     r1.forEach((nm,i)=>pins.push({name:nm,x:i,y:0}));r2.forEach((nm,i)=>pins.push({name:nm,x:i,y:g}));
@@ -1231,14 +1240,15 @@ function runsOf(path,C){
   for(let i=1;i<path.length;i++){if(i===path.length-1||dir(path[i-1],path[i])!==dir(path[i],path[i+1])){out.push([path[s],path[i],i-s]);s=i}}
   return out;
 }
-function autoArrange(){
+function autoArrange(fixed={}){
   const perf=perfComp();if(!perf)return[];const C=perf.cols|0,R=perf.rows|0;
-  const keep=P.perf.pos;P.perf.pos={};const occ=new Set();const skipped=[];
-  const list=P.comps.filter(c=>c.papel!=='pcb'&&c.incluir!==false).sort((a,b)=>(a.papel==='placa'?0:1)-(b.papel==='placa'?0:1)||(b.pinos.length-a.pinos.length));
+  const keep=P.perf.pos;P.perf.pos={...fixed};const occ=new Set();const skipped=[];
+  Object.entries(fixed).forEach(([cid,pos])=>{const c=compById(cid);if(c)placeFP(c,pos).body.forEach(([x,y])=>occ.add(y*C+x))});
+  const list=P.comps.filter(c=>c.papel!=='pcb'&&c.incluir!==false&&!fixed[c.id]).sort((a,b)=>(a.papel==='placa'?0:1)-(b.papel==='placa'?0:1)||(b.pinos.length-a.pinos.length));
   const netHoles=()=>{const r=routeLite();return r};
   function routeLite(){const map={};Object.entries(P.perf.pos).forEach(([cid,pos])=>{const pl=placeFP(compById(cid),pos);pl.pins.forEach(p=>{P.nos.forEach(n=>n.pontos.forEach(pt=>{if(pt.c===cid&&pinMatch(p.name,pt.p))(map[n.id]=map[n.id]||[]).push([p.gx,p.gy])}))})});return map}
   for(const c of list){
-    const modo=c.papel==='placa'?undefined:(keep[c.id]?.modo||'conector');
+    const modo=c.papel==='placa'?undefined:(keep[c.id]?.modo||(['botao6','botao12','led5','buzzer'].includes(c.tipo)?'direto':'conector'));
     let placed=null;
     for(const att of[{edge:1,clr:1},{edge:0,clr:1},{edge:0,clr:0}]){
       const nh=netHoles();let bestScore=1e9;
@@ -1337,7 +1347,7 @@ $('#perfBox').addEventListener('click',e=>{
   if(t.dataset.modo){const p=P.perf.pos[t.dataset.modo];p.modo=p.modo==='direto'?'conector':'direto';dirty();renderPerf();return}
   if(t.dataset.part!==undefined&&!selPart){selPart=t.dataset.part;renderPerf();return}
   if(t.dataset.h!==undefined&&selPart){const C=perfComp().cols|0;const h=+t.dataset.h;const old=P.perf.pos[selPart]||{};const c=compById(selPart);
-    P.perf.pos[selPart]={x:h%C,y:(h/C)|0,rot:old.rot||0,modo:old.modo||(c.papel==='placa'?undefined:'conector')};dirty();renderPerf();return}
+    P.perf.pos[selPart]={x:h%C,y:(h/C)|0,rot:old.rot||0,modo:old.modo||(c.papel==='placa'?undefined:(['botao6','botao12','led5','buzzer'].includes(c.tipo)?'direto':'conector'))};dirty();renderPerf();return}
 });
 $('#perfBox').addEventListener('change',e=>{if(e.target.dataset.perfsel!==undefined){P.perf.id=e.target.value;dirty();renderPerf()}});
 document.addEventListener('keydown',e=>{
@@ -1351,28 +1361,32 @@ function flashPerf(t){const d=document.createElement('div');d.className='alert';
 function effComp(c){
   let L=num(c.L,10),W=num(c.W,10),H=num(c.H,5);let jan=c.janela?{w:num(c.janela.w),h:num(c.janela.h),dx:num(c.janela.dx),dy:num(c.janela.dy)}:null;let lat=c.lateral?{...c.lateral,w:num(c.lateral.w),h:num(c.lateral.h),z:num(c.lateral.z)}:null;
   if(lat)lat.off=num(lat.off);
+  let jans=(c.jans||[]).map(j=>({...j}));if(c.rot)jans=jans.map(j=>({...j,w:j.h,h:j.w,dx:-j.dy,dy:j.dx}));
   if(c.rot){[L,W]=[W,L];if(jan)jan={w:jan.h,h:jan.w,dx:-jan.dy,dy:jan.dx};if(lat){if(lat.lado==='esquerda'||lat.lado==='direita')lat.off=-lat.off;lat.lado={esquerda:'frente',frente:'direita',direita:'tras',tras:'esquerda'}[lat.lado]}}
-  return{c,L,W,H,jan,lat};
+  return{c,L,W,H,jan,lat,jans};
 }
 const ROT_LADO={esquerda:'frente',frente:'direita',direita:'tras',tras:'esquerda'};
 function perfForCase(){
   const perf=perfComp();if(!perf||perf.incluir===false)return null;const pos=P.perf.pos||{};if(!Object.keys(pos).length)return null;
-  const onPerf=new Set();let hMax=0,lat=null;const C=perf.cols|0,R=perf.rows|0;
+  const onPerf=new Set();let hMax=0,lat=null;const jans=[];const C=perf.cols|0,R=perf.rows|0;
   const ox=(num(perf.L)-(C-1)*HOLE)/2,oy=(num(perf.W)-(R-1)*HOLE)/2;
   for(const[cid,p]of Object.entries(pos)){const c=compById(cid);if(!c)continue;
-    if(c.papel==='placa'||p.modo==='direto'){onPerf.add(cid);hMax=Math.max(hMax,num(c.H))}
+    if(c.papel==='placa'||p.modo==='direto'){onPerf.add(cid);hMax=Math.max(hMax,num(c.H)+(c.papel==='placa'?8.5:0));
+      if(p.modo==='direto'&&c.janela){const pl=placeFP(c,p);const gx=pl.pins.reduce((s,q)=>s+q.gx,0)/pl.pins.length,gy=pl.pins.reduce((s,q)=>s+q.gy,0)/pl.pins.length;
+        jans.push({w:num(c.janela.w),h:num(c.janela.h),dx:(ox+gx*HOLE)-num(perf.L)/2,dy:num(perf.W)/2-(oy+gy*HOLE),topZ:1.6+num(c.H),nome:c.nome})}}
     if(c.papel==='placa'&&c.lateral&&!lat){
       const pl=placeFP(c,p);const xs=pl.body.map(b=>b[0]),ys=pl.body.map(b=>b[1]);const gx=(Math.min(...xs)+Math.max(...xs))/2,gy=(Math.min(...ys)+Math.max(...ys))/2;
-      let lado='direita';for(let i=0;i<((p.rot|0)%4);i++)lado=ROT_LADO[lado];
-      const off=(lado==='esquerda'||lado==='direita')?(oy+gy*HOLE)-num(perf.W)/2:(ox+gx*HOLE)-num(perf.L)/2;
+      /* na grade a linha cresce para a frente da placa (para baixo na tela): no case isso é -y; giro da grade = sentido horário visto de cima */
+      const CW={direita:'frente',frente:'esquerda',esquerda:'tras',tras:'direita'};let lado='direita';for(let i=0;i<((p.rot|0)%4);i++)lado=CW[lado];
+      const off=(lado==='esquerda'||lado==='direita')?num(perf.W)/2-(oy+gy*HOLE):(ox+gx*HOLE)-num(perf.L)/2;
       lat={lado,w:num(c.lateral.w),h:num(c.lateral.h),z:1.6+num(c.lateral.z),off};
     }}
-  return{perf,onPerf,H:1.6+2+hMax,lat};
+  return{perf,onPerf,H:1.6+2+hMax,lat,jans};
 }
 function layoutCase(){
   if(!P)return null;const cfg=P.caseCfg;const pf=perfForCase();
   const items=P.comps.filter(c=>c.incluir!==false&&(c.papel!=='pcb'||(pf&&c.id===pf.perf.id))&&!(pf&&pf.onPerf.has(c.id)))
-    .map(c=>pf&&c.id===pf.perf.id?effComp({...c,H:pf.H,lateral:pf.lat,janela:null}):effComp(c));
+    .map(c=>pf&&c.id===pf.perf.id?effComp({...c,H:pf.H,lateral:pf.lat,janela:null,jans:pf.jans}):effComp(c));
   if(!items.length)return null;
   const f=num(cfg.folga),m=num(cfg.margem),ch=num(cfg.canal),e=num(cfg.espacoFios),p=num(cfg.parede,2);
   let IX,IY,IZ;const pl=[];
@@ -1422,7 +1436,7 @@ function buildLid(lay){
   S.push([0,0,0,OX,OY,t]);
   if(lh>0){const ax0=p+clr,ax1=OX-p-clr,ay0=p+clr,ay1=OY-p-clr;
     S.push([ax0,ay0,t,ax1,ay0+tr,t+lh],[ax0,ay1-tr,t,ax1,ay1,t+lh],[ax0,ay0,t,ax0+tr,ay1,t+lh],[ax1-tr,ay0,t,ax1,ay1,t+lh]);}
-  lay.pl.forEach((it,i)=>{
+  lay.pl.forEach((it,i)=>{(it.jans||[]).forEach(j=>{if(cfg.modo==='empilhado'&&i!==lay.pl.length-1)return;const cx=it.x0+it.L/2+j.dx,cy=OY-(it.y0+it.W/2+j.dy);Hh.push([cx-j.w/2,cy-j.h/2,-1,cx+j.w/2,cy+j.h/2,t+lh+1])});
     if(!it.jan)return;if(cfg.modo==='empilhado'&&i!==lay.pl.length-1)return;
     const cx=it.x0+it.L/2+it.jan.dx,cy=OY-(it.y0+it.W/2+it.jan.dy);
     Hh.push([cx-it.jan.w/2,cy-it.jan.h/2,-1,cx+it.jan.w/2,cy+it.jan.h/2,t+lh+1]);
@@ -1488,7 +1502,11 @@ $('#orderList').addEventListener('change',e=>{if(e.target.dataset.o!=='inc')retu
 let caseTimer=null;const scheduleCase=()=>{clearTimeout(caseTimer);caseTimer=setTimeout(updateCase,250)};
 function renderCase(){
   renderCaseForm();
-  const a=P.analise;$('#caseTips').innerHTML=a&&a.caseDicas&&a.caseDicas.length?`<h3 style="margin-top:.8rem">Dicas para este projeto (IA)</h3><ul class="small" style="margin:.3rem 0 0 1.1rem;padding:0">${a.caseDicas.map(t=>`<li>${esc(t)}</li>`).join('')}</ul>`:'';
+  const pfc=perfForCase();const layc=layoutCase();let altTip='';
+  if(pfc&&layc&&pfc.jans.length){const it=layc.pl.find(x=>x.c.id===pfc.perf.id);if(it){const under=layc.OZ;const tops=pfc.jans.map(j=>({nome:j.nome,gap:under-(it.z0+j.topZ)}));const g=Math.max(...tops.map(t=>t.gap));
+    altTip=g<=10?`<div class="alert small">Os botões soldados na placa ficam <b>${fmt(g)} mm</b> abaixo da tampa. Use botão 6×6 de <b>haste alta</b> (procure “chave táctil 6×6 ${Math.ceil(5+g)} mm”) ou um prolongador impresso dessa altura.</div>`
+      :`<div class="alert small">Os botões soldados na placa ficam <b>${fmt(g)} mm</b> abaixo da tampa: alto demais para qualquer haste. Saídas, da mais simples para a mais compacta:<ol style="margin:.4rem 0 0 1.1rem;padding:0"><li><b>Botões na tampa</b> (recomendado): solde os botões numa tirinha de placa perfurada e cole embaixo da tampa, alinhada com os furos; ligue à placa principal com fios (um por botão + um GND).</li><li><b>Prolongador impresso</b>: um pino de ${fmt(g)} mm sobre cada botão, com guia na tampa (pode ficar bambo acima de ~15 mm).</li><li><b>ESP soldado direto, sem soquete</b>: a caixa baixa uns 8,5 mm (mas o ESP não sai mais da placa).</li></ol></div>`}}
+  const a=P.analise;$('#caseTips').innerHTML=altTip+(a&&a.caseDicas&&a.caseDicas.length?`<h3 style="margin-top:.8rem">Dicas para este projeto (IA)</h3><ul class="small" style="margin:.3rem 0 0 1.1rem;padding:0">${a.caseDicas.map(t=>`<li>${esc(t)}</li>`).join('')}</ul>`:'');
   initThree().then(updateCase);
 }
 
@@ -1644,6 +1662,9 @@ function moduleModel(c,{pinsDown=false}={}){
   const t=c.tipo||'';
   if(t==='led5'){g.add(cy(2.5,5,sm('ledb',{color:0xff4b3a,transparent:true,opacity:.75,emissive:0xff2a10,emissiveIntensity:.6}),2,0,6.5));const s=mk(new THREE.SphereGeometry(2.5,16,10,0,Math.PI*2,0,Math.PI/2),SM.ledb,2,0,9);s.rotation.x=Math.PI/2;g.add(s);addPins(0);return{g,anchors}}
   if(t==='buzzer'){g.add(cy(6,9,M().chip,1.5,0,4.5,32));g.add(cy(1,0.3,M().hole,1.5,0,9.1));addPins(0);return{g,anchors}}
+  if(t==='botao6'){const m=M();g.add(bx(6,6,3.4,m.chip,0,0,pinsDown?1.7:1.7));g.add(bx(6.2,6.2,.4,m.silver,0,0,3.5));g.add(cy(1.75,1.6,sm('cap6',{color:0x1c1d1f,roughness:.5}),0,0,4.5));
+    BTN6.forEach(([nm,x,y])=>{const lx=(x-1)*2.54,ly=(1.5-y)*2.54;g.add(bx(.7,.5,4,m.silver,lx,ly,pinsDown?-1.6:-1.6));const a=new THREE.Object3D();a.position.set(lx,ly,pinsDown?-3.6:4.5);a.userData={pin:nm};g.add(a);if(nm!=='—')anchors.push(a)});
+    return{g,anchors}}
   if(t==='botao12'){g.add(bx(12,12,3.5,M().chip,1.5,0,1.75));g.add(cy(3.6,4,sm('cap',{color:0x2b2f33,roughness:.5}),1.5,0,5.5));addPins(0);return{g,anchors}}
   const col=MOD_COLOR[t]??(c.papel==='modulo'?0x1f6f73:0x1f6f73);
   g.add(bx(L,W,1.6,sm('mod'+col,{color:col,roughness:.6}),0,0,.8));
@@ -1733,6 +1754,9 @@ function buildBench(refit){
         const perp=new THREE.Vector3(-dir.y,dir.x,0);const rs=rows[0].length?Math.sign(rows[0][0].clone().sub(ctr).dot(perp))||1:1;
         const{g,anchors}=espModel(c,{rowSign:rs,pinsDown:true});g.position.set(ctr.x,ctr.y,1.6+8.5+2.5);g.rotation.z=Math.atan2(dir.y,dir.x);pg.add(g);
         addAnchors(c,pl.pins.map((p,i)=>({obj:null,pos:hxy(p.gx,p.gy).setZ(1.6+4),c,pin:p.name})));
+      }else if(pos.modo==='direto'&&c.tipo==='botao6'){
+        const ctr=pts.reduce((s,p)=>s.add(p.clone()),new THREE.Vector3()).multiplyScalar(1/pts.length);const{g}=moduleModel(c,{pinsDown:true});g.position.set(ctr.x,ctr.y,1.6+3.6);g.rotation.z=-(pos.rot|0)*Math.PI/2;pg.add(g);
+        addAnchors(c,pl.pins.filter(p=>p.name!=='—').map(p=>({obj:null,pos:hxy(p.gx,p.gy).setZ(4),c,pin:p.name})));
       }else if(pos.modo==='direto'){
         const n=pts.length;const dir=n>1?pts[n-1].clone().sub(pts[0]).normalize():new THREE.Vector3(0,-1,0);
         const{g}=moduleModel(c,{pinsDown:true});const ang=Math.atan2(dir.y,dir.x)+Math.PI/2;g.rotation.z=ang;
@@ -1827,8 +1851,17 @@ function buildProto(root,regNet,addAnchors,netOf){
     col+=n+2;
   });
   // módulos: barra na linha a (corpo sobre o trilho de cima) ou na linha j
+  mods.filter(c=>c.tipo==='botao6').forEach(c=>{
+    if(col+3>BB.cols){offBoard.push(c);return}
+    const c0=col;const{g}=moduleModel(c,{pinsDown:true});g.position.set(bbX(c0+1),0,H+3.6);root.add(g);
+    [[c0,4],[c0+2,4],[c0,7],[c0+2,7]].forEach(([cc,r])=>used.add(key(cc,r)));
+    pushStrip(c,'A',{col:c0,row:4,half:0});pushStrip(c,'B',{col:c0+2,row:7,half:1});
+    addAnchors(c,[{pos:pinTop(c0,4).setZ(H+8),pin:'A',c},{pos:pinTop(c0+2,7).setZ(H+8),pin:'B',c}]);
+    col+=5;
+  });
+  if(mods.some(c=>c.tipo==='botao6'))notes.push('Botões atravessam a divisão do meio. Use sempre pernas em diagonal (A em cima à esquerda, B embaixo à direita): funciona em qualquer posição do botão.');
   let colTop=col,colBot=col;
-  mods.forEach(c=>{
+  mods.filter(c=>c.tipo!=='botao6').forEach(c=>{
     const n=Math.max(c.pinos.length,1);const span=Math.max(n,Math.ceil(Math.max(num(c.W),n*2.54+1.5)/HOLE));
     let half,c0;if(colTop+span<=BB.cols){half=0;c0=colTop;colTop+=span+2}else if(colBot+span<=BB.cols){half=1;c0=colBot;colBot+=span+2}else{offBoard.push(c);notes.push(`${c.nome.split(/[ (]/)[0]}: não coube na protoboard, fica ao lado.`);return}
     const row=half?11:0;const cStart=c0+Math.floor((span-n)/2);
@@ -1886,10 +1919,12 @@ const q=s=>'"'+String(s).replace(/\\/g,'\\\\').replace(/"/g,'\\"')+'"';
 const f2=v=>(Math.round(v*1000)/1000).toString();
 function refsOf(){const m={};let u=0,k=0;P.comps.filter(c=>c.papel!=='pcb').forEach(c=>{m[c.id]=c.papel==='placa'?'U'+(++u):'M'+(++k)});return m}
 function compPins(c){ // [{num,name}]
+  if(c.tipo==='botao6')return BTN6.map(([nm],i)=>({num:String(i+1),name:nm}));
   if(c.papel==='placa'){const r1=c.fp?.r1||[],r2=c.fp?.r2||[];return[...r1,...r2].map((nm,i)=>({num:String(i+1),name:nm}))}
   return c.pinos.map((nm,i)=>({num:String(i+1),name:nm}));
 }
 function libPads(c){ // posições na biblioteca (KiCad, y para baixo), centradas
+  if(c.tipo==='botao6')return{pads:BTN6.map(([nm,x,y])=>({x:(x-1)*HOLE,y:(y-1.5)*HOLE})),w:3*HOLE,h:4*HOLE};
   if(c.papel==='placa'){const r1=c.fp?.r1||[],r2=c.fp?.r2||[],g=(c.fp?.gap||10)*HOLE;const out=[];
     r1.forEach((nm,i)=>out.push({x:(i-(r1.length-1)/2)*HOLE,y:-g/2}));r2.forEach((nm,i)=>out.push({x:(i-(r2.length-1)/2)*HOLE,y:g/2}));
     return{pads:out,w:Math.max(num(c.L),r1.length*HOLE),h:Math.max(num(c.W),g+HOLE)}}
