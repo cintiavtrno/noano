@@ -345,6 +345,7 @@ details.learn li{margin:.25rem 0}
             <button class="prim" data-stl="gabarito">Gabarito de teste</button>
             <button data-stl="base">Base</button>
             <button data-stl="tampa">Tampa</button>
+            <button data-stl="tudo">Tudo (.zip)</button>
           </div>
           <p class="small muted" id="stlMsg">A tampa já vem virada para imprimir (face de cima na mesa). Material sugerido: PLA, 0,2 mm, 3 paredes, sem suporte. Os furos de USB podem pedir suporte se ficarem altos.</p>
           <div id="caseTips"></div>
@@ -1371,18 +1372,39 @@ function updateCase(){
 }
 $('#xray').onchange=updateCase;$('#explode').oninput=updateCase;
 
+/* zip sem compressão (o download dentro do Claude não aceita .stl, aceita .zip) */
+const CRC_T=(()=>{const t=new Uint32Array(256);for(let n=0;n<256;n++){let c=n;for(let k=0;k<8;k++)c=c&1?0xEDB88320^(c>>>1):c>>>1;t[n]=c>>>0}return t})();
+function crc32(u8){let c=0xFFFFFFFF;for(let i=0;i<u8.length;i++)c=CRC_T[(c^u8[i])&255]^(c>>>8);return(c^0xFFFFFFFF)>>>0}
+function makeZip(files){
+  const enc=new TextEncoder();const chunks=[],central=[];let off=0;
+  const d=new Date();const dt=((d.getFullYear()-1980)<<9)|((d.getMonth()+1)<<5)|d.getDate(),tm=(d.getHours()<<11)|(d.getMinutes()<<5)|(d.getSeconds()>>1);
+  for(const f of files){
+    const name=enc.encode(f.name),data=new Uint8Array(f.data),crc=crc32(data);
+    const h=new DataView(new ArrayBuffer(30));h.setUint32(0,0x04034b50,true);h.setUint16(4,20,true);h.setUint16(6,0x0800,true);h.setUint16(8,0,true);h.setUint16(10,tm,true);h.setUint16(12,dt,true);h.setUint32(14,crc,true);h.setUint32(18,data.length,true);h.setUint32(22,data.length,true);h.setUint16(26,name.length,true);h.setUint16(28,0,true);
+    chunks.push(h.buffer,name,data);
+    const c=new DataView(new ArrayBuffer(46));c.setUint32(0,0x02014b50,true);c.setUint16(4,20,true);c.setUint16(6,20,true);c.setUint16(8,0x0800,true);c.setUint16(10,0,true);c.setUint16(12,tm,true);c.setUint16(14,dt,true);c.setUint32(16,crc,true);c.setUint32(20,data.length,true);c.setUint32(24,data.length,true);c.setUint16(28,name.length,true);c.setUint32(42,off,true);
+    central.push(c.buffer,name);off+=30+name.length+data.length;
+  }
+  const cSize=central.reduce((s,b)=>s+(b.byteLength??b.length),0);
+  const e=new DataView(new ArrayBuffer(22));e.setUint32(0,0x06054b50,true);e.setUint16(8,files.length,true);e.setUint16(10,files.length,true);e.setUint32(12,cSize,true);e.setUint32(16,off,true);
+  return new Blob([...chunks,...central,e.buffer],{type:'application/zip'});
+}
+function stlFor(kind,lay){const parts=kind==='tampa'?buildLid(lay):buildBase(lay,kind==='gabarito');const pos=meshUnion(parts.S,parts.Hh);return{buf:stlBinary(pos,kind),tris:(pos.length/9)|0}}
 document.querySelectorAll('[data-stl]').forEach(b=>b.onclick=async()=>{
   const kind=b.dataset.stl;const lay=layoutCase();if(!lay){$('#stlMsg').textContent='Adicione peças primeiro.';return}
-  const parts=kind==='tampa'?buildLid(lay):buildBase(lay,kind==='gabarito');
-  const pos=meshUnion(parts.S,parts.Hh);const buf=stlBinary(pos,kind);
   const slug=P.nome.toLowerCase().normalize('NFD').replace(/[̀-ͯ]/g,'').replace(/[^a-z0-9]+/g,'-').replace(/^-|-$/g,'')||'case';
-  const filename=`${slug}-${kind}.stl`;
+  const kinds=kind==='tudo'?['gabarito','base','tampa']:[kind];
+  const files=kinds.map(k=>({name:`${slug}-${k}.stl`,...stlFor(k,lay)}));
   try{
     const dl=window.claude?.use?await claude.use('downloads'):null;
-    const blob=new Blob([buf],{type:'model/stl'});
+    let filename,blob;
+    if(dl||files.length>1){filename=kind==='tudo'?`${slug}-case.zip`:files[0].name.replace(/\.stl$/,'.zip');blob=makeZip(files.map(f=>({name:f.name,data:f.buf})))}
+    else{filename=files[0].name;blob=new Blob([files[0].buf],{type:'model/stl'})}
     if(dl)await dl.save({filename,data:blob});
     else{const a=document.createElement('a');a.href=URL.createObjectURL(blob);a.download=filename;document.body.appendChild(a);a.click();setTimeout(()=>{URL.revokeObjectURL(a.href);a.remove()},1000)}
-    $('#stlMsg').textContent=`${filename} pronto (${(pos.length/9)|0} triângulos). Abra no fatiador (Cura, PrusaSlicer, Bambu Studio).`;
+    $('#stlMsg').textContent=filename.endsWith('.zip')
+      ?`${filename} pronto: descompacte e abra ${files.length>1?'os arquivos .stl':'o .stl'} no fatiador (Cura, PrusaSlicer, Bambu Studio).`
+      :`${filename} pronto (${files[0].tris} triângulos). Abra no fatiador (Cura, PrusaSlicer, Bambu Studio).`;
   }catch(e){$('#stlMsg').textContent='Download cancelado ou recusado: '+(e.message||e.code||e)}
 });
 
