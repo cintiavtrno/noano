@@ -171,7 +171,8 @@ details.learn li{margin:.25rem 0}
 .pinrow{width:100%;font-family:ui-monospace,Menlo,monospace;font-size:.8rem}
 
 /* placa perfurada */
-.perfgrid{display:grid;grid-template-columns:minmax(0,1.55fr) minmax(300px,1fr);gap:1rem;margin-top:.8rem}
+.perfgrid{display:grid;grid-template-columns:minmax(0,1.7fr) minmax(320px,1fr);gap:1rem;margin-top:.8rem;align-items:start}
+.perfgrid>div:first-child{position:sticky;top:.5rem}
 @media (max-width:1000px){.perfgrid{grid-template-columns:1fr}}
 .perfwrap{overflow:auto;background:#0e161a;border:1px solid var(--line);border-radius:var(--r);padding:.6rem}
 #perfSvg{display:block}
@@ -188,6 +189,10 @@ details.learn li{margin:.25rem 0}
 .perfnet{border-left:4px solid var(--c);padding:.2rem 0 .2rem .7rem;margin:.7rem 0}
 .ideia{border-color:#5a4630;background:linear-gradient(135deg,#1a1712,#131b1f 60%)}
 .ideia h2{font-size:1.35rem}
+.place{list-style:none;margin:.4rem 0;padding:0}
+.place li{border-left:4px solid var(--c);padding:.45rem .7rem;margin:.45rem 0;background:var(--panel2);border-radius:0 8px 8px 0;cursor:pointer}
+.place li.on{box-shadow:0 0 0 1px var(--c) inset}
+.place li div{margin-top:.2rem}
 /* bancada */
 .benchgrid{display:grid;grid-template-columns:minmax(0,1fr) 300px;gap:1rem}
 @media (max-width:1000px){.benchgrid{grid-template-columns:1fr}}
@@ -1160,7 +1165,8 @@ function treeSVG(n,pts,hex){
 }
 
 /* ============ PLACA PERFURADA ============ */
-const HOLE=2.54;let selPart=null;
+const HOLE=2.54;let selPart=null,perfFocus=null;
+const PART_HEX=['#e8a066','#4ea8ff','#3ddc97','#ff7eb6','#ffd23f','#b38cff','#7ee0ff','#ff9f43'];
 const colName=x=>x<26?String.fromCharCode(65+x):String.fromCharCode(64+Math.floor(x/26))+String.fromCharCode(65+x%26);
 const holeName=(x,y)=>colName(x)+(y+1);
 function pnorm(s){s=String(s).toUpperCase().replace(/\(.*?\)/g,'').replace(/\s+/g,'');s=s.replace(/^GPIO_?NUM_?/,'').replace(/^GPIO/,'').replace(/^IO(?=\d)/,'');
@@ -1273,7 +1279,7 @@ function renderPerf(){
   if(!pcbs.length){box.innerHTML=`<div class="empty">Escolha a placa perfurada que você vai usar:<div class="row" style="justify-content:center;margin-top:.7rem"><button class="prim" data-addperf="perf7x5">7 × 5 cm</button><button class="prim" data-addperf="perf4x6">4 × 6 cm</button></div><p class="small">Outra medida? Adicione e ajuste os furos na etapa 1 (dá para salvar em Minhas peças).</p></div>`;return}
   if(!perfComp())P.perf={id:pcbs[0].id,pos:P.perf?.pos||{},view:P.perf?.view||'baixo'};
   const r=routePerf();const{C,R}=r;const view=P.perf.view||'baixo';const flip=view==='baixo';
-  const PX=22,M=30;const W=M+C*PX+12,H=M+R*PX+12;
+  const PX=24,M=40;const W=M+C*PX+40,H=M+R*PX+40;
   const cx=x=>M+(flip?C-1-x:x)*PX+PX/2,cy=y=>M+y*PX+PX/2;const hx=h=>cx(h%C),hy=h=>cy((h/C)|0);
   const netById=Object.fromEntries(P.nos.map(n=>[n.id,n]));
   let s=`<rect x="${M-4}" y="${M-4}" width="${C*PX+8}" height="${R*PX+8}" rx="6" fill="${flip?'#2a2015':'#1e2a1c'}" stroke="#5a4630"/>`;
@@ -1281,9 +1287,13 @@ function renderPerf(){
   for(let y=0;y<R;y++)s+=`<text x="${M-10}" y="${cy(y)+3}" text-anchor="end" fill="#9aabb3">${y+1}</text>`;
   // corpos
   const bodyRect=pl=>{const xs=pl.body.map(b=>cx(b[0])),ys=pl.body.map(b=>cy(b[1]));return{x:Math.min(...xs)-PX/2+2,y:Math.min(...ys)-PX/2+2,w:Math.max(...xs)-Math.min(...xs)+PX-4,h:Math.max(...ys)-Math.min(...ys)+PX-4}};
-  let bodies='';r.parts.forEach(pl=>{const b=bodyRect(pl);const isB=pl.c.papel==='placa';const sel=selPart===pl.c.id;
-    bodies+=`<g class="part" data-part="${pl.c.id}"><rect x="${b.x}" y="${b.y}" width="${b.w}" height="${b.h}" rx="5" fill="${flip?'none':(isB?'#1b1f22cc':'#16304acc')}" stroke="${pl.bad?'#ff6b5e':sel?'#ffffff':isB?'#e8a066':'#4ea8ff'}" stroke-width="${sel||pl.bad?2.5:1.5}" ${flip?'stroke-dasharray="5 4"':''}/>
-      <text x="${b.x+6}" y="${b.y+13}" fill="${isB?'#e8a066':'#7ec0ff'}" style="font-size:11px;font-weight:700" pointer-events="none">${esc(pl.c.nome.split(/[ (]/)[0])}${flip?' (do outro lado)':''}</text></g>`});
+  const partHex={};r.parts.forEach((pl,i)=>partHex[pl.c.id]=PART_HEX[i%PART_HEX.length]);
+  const op=id=>perfFocus&&perfFocus!==id?.18:1;
+  let bodies='';r.parts.forEach(pl=>{const b=bodyRect(pl);const isB=pl.c.papel==='placa';const sel=selPart===pl.c.id;const ph=partHex[pl.c.id];
+    const big=b.w>90&&b.h>40;const nm=esc(pl.c.nome.split(/[ (]/)[0]);
+    bodies+=`<g class="part" data-part="${pl.c.id}" opacity="${op(pl.c.id)}"><rect x="${b.x}" y="${b.y}" width="${b.w}" height="${b.h}" rx="5" fill="${flip?'none':ph+'2a'}" stroke="${pl.bad?'#ff6b5e':sel?'#ffffff':ph}" stroke-width="${sel||pl.bad||perfFocus===pl.c.id?3:1.8}" ${flip?'stroke-dasharray="5 4"':''}/>
+      ${big?`<text x="${b.x+b.w/2}" y="${b.y+b.h/2+5}" text-anchor="middle" fill="${ph}" style="font-family:'Bricolage Grotesque',sans-serif;font-size:16px;font-weight:800" pointer-events="none">${nm}${flip?' (do outro lado)':''}</text>`
+           :`<text x="${b.x+b.w/2}" y="${b.y+b.h/2+4}" text-anchor="middle" fill="#ffffff" stroke="#0c1215" stroke-width="3" paint-order="stroke" style="font-size:11px;font-weight:800" pointer-events="none">${nm}</text>`}</g>`});
   // furos
   let holes='';for(let y=0;y<R;y++)for(let x=0;x<C;x++){const h=y*C+x;holes+=`<g class="hole" data-h="${h}"><circle cx="${cx(x)}" cy="${cy(y)}" r="7" fill="#b87a45" fill-opacity="${flip?.55:.25}"/><circle cx="${cx(x)}" cy="${cy(y)}" r="2.3" fill="#0c1215"/><title>${holeName(x,y)}</title></g>`}
   // trilhas
@@ -1291,11 +1301,47 @@ function renderPerf(){
     o.paths.forEach(p=>{tr+=`<polyline points="${p.map(h=>hx(h)+','+hy(h)).join(' ')}" fill="none" stroke="${hex}" stroke-width="${flip?7:3}" stroke-linecap="round" stroke-linejoin="round" ${flip?'':'stroke-dasharray="2 5" opacity=".7"'} pointer-events="none"/>`});
     o.fails.forEach(([a,b])=>{tr+=`<path d="M${hx(a)} ${hy(a)} Q${(hx(a)+hx(b))/2} ${Math.min(hy(a),hy(b))-30} ${hx(b)} ${hy(b)}" fill="none" stroke="${hex}" stroke-width="2.5" stroke-dasharray="6 4" pointer-events="none"/>`})});
   // pinos
-  let pins='';r.parts.forEach(pl=>pl.pins.forEach(p=>{if(p.gx<0||p.gy<0||p.gx>=C||p.gy>=R)return;const h=p.gy*C+p.gx;
-    const n=P.nos.find(n=>n.pontos.some(pt=>pt.c===pl.c.id&&pinMatch(p.name,pt.p)));
-    pins+=n?`<g pointer-events="none">${shapeSVG(n.tipo,hx(h),hy(h),6.5,hexOf(n.cor),'stroke="#0c1215" stroke-width="1.5"')}</g>`:`<circle cx="${hx(h)}" cy="${hy(h)}" r="5" fill="none" stroke="#9aabb3" stroke-width="1.5" pointer-events="none"/>`;
-    pins+=`<title>${esc(pl.c.nome)} · ${esc(p.name)}</title>`}));
-  const svg=`<svg id="perfSvg" viewBox="0 0 ${W} ${H}" width="${W}" height="${H}">${s}${flip?holes+bodies:bodies+holes}${tr}${pins}</svg>`;
+  let pins='',labels='';const inside=(x,y)=>x>=0&&y>=0&&x<C&&y<R;
+  const shortPin=nm=>String(nm).split('/')[0].replace(/^GPIO/,'IO');
+  r.parts.forEach(pl=>{const b=bodyRect(pl);const bcx=b.x+b.w/2,bcy=b.y+b.h/2;let g=`<g opacity="${op(pl.c.id)}" pointer-events="none">`;
+    pl.pins.forEach(p=>{if(!inside(p.gx,p.gy))return;const h=p.gy*C+p.gx;const x=hx(h),y=hy(h);
+      const n=P.nos.find(n=>n.pontos.some(pt=>pt.c===pl.c.id&&pinMatch(p.name,pt.p)));
+      g+=n?shapeSVG(n.tipo,x,y,6.5,hexOf(n.cor),'stroke="#0c1215" stroke-width="1.5"'):`<circle cx="${x}" cy="${y}" r="5" fill="none" stroke="${p.name==='—'?'#6b7a82':'#9aabb3'}" stroke-width="1.5"/>`;
+      const show=p.name!=='—'&&(pl.c.papel!=='placa'||n);
+      const sameY=pl.pins.every(q=>q.gy===pl.pins[0].gy),sameX=pl.pins.every(q=>q.gx===pl.pins[0].gx);
+      if(show){let vx=x-bcx,vy=y-bcy;if(pl.c.papel==='modulo'&&pl.c.tipo!=='botao6'&&pl.pins.length>2){if(sameY){vx=0;vy=1}else if(sameX){vx=1;vy=0}}let t;const lbl=esc(shortPin(p.name));const col=n?hexOf(n.cor):'#cfd8dc';
+        if(Math.abs(vy)>=Math.abs(vx)*.6)t=vy<0?`<text x="${x+3}" y="${y-11}" transform="rotate(-90 ${x+3} ${y-11})" text-anchor="start" fill="${col}" style="font-size:10px;font-weight:700">${lbl}</text>`:`<text x="${x+3}" y="${y+11}" transform="rotate(-90 ${x+3} ${y+11})" text-anchor="end" fill="${col}" style="font-size:10px;font-weight:700">${lbl}</text>`;
+        else t=vx<0?`<text x="${x-10}" y="${y+3}" text-anchor="end" fill="${col}" stroke="#0c1215" stroke-width="3" paint-order="stroke" style="font-size:10px;font-weight:700">${lbl}</text>`:`<text x="${x+10}" y="${y+3}" text-anchor="start" fill="${col}" stroke="#0c1215" stroke-width="3" paint-order="stroke" style="font-size:10px;font-weight:700">${lbl}</text>`;
+        labels+=`<g opacity="${op(pl.c.id)}" pointer-events="none">${t}</g>`}
+      g+=`<title>${esc(pl.c.nome)} · ${esc(p.name)} · furo ${holeName(p.gx,p.gy)}</title>`});
+    if(pl.c.papel==='placa'){const n1=(pl.c.fp?.r1||[]).length;const row=n1>1?pl.pins.slice(0,n1):pl.pins.slice(n1);if(row.length>1){const a=row[0],z=row[row.length-1];
+      const ax=hx(a.gy*C+a.gx),ay=hy(a.gy*C+a.gx),zx=hx(z.gy*C+z.gx),zy=hy(z.gy*C+z.gx);const L=Math.hypot(zx-ax,zy-ay)||1;const ux=(zx-ax)/L,uy=(zy-ay)/L;
+      const mx=(bcx+(ux*(b.w/2+14))),my=(bcy+(uy*(b.h/2+14)));
+      const ar=Math.abs(ux)>=Math.abs(uy)?(ux>0?'▶':'◀'):(uy>0?'▼':'▲');const lx=Math.max(24,Math.min(W-24,mx)),ly=Math.max(14,Math.min(H-10,my));
+      g+=`<g><rect x="${lx-23}" y="${ly-10}" width="46" height="20" rx="4" fill="#c9ced3"/><text x="${lx}" y="${ly+4}" text-anchor="middle" fill="#0c1215" style="font-size:11px;font-weight:800">${ux<0&&Math.abs(ux)>=Math.abs(uy)?ar+' USB':'USB '+ar}</text></g>`}}
+    pins+=g+'</g>'});
+  const a1=`<g pointer-events="none"><circle cx="${cx(0)}" cy="${cy(0)}" r="10" fill="none" stroke="#ffffff" stroke-width="2.5"/><text x="${cx(0)+(flip?14:-14)}" y="${cy(0)-12}" text-anchor="${flip?'start':'end'}" fill="#ffffff" style="font-size:11px;font-weight:800">A1</text></g>`;
+  const svg=`<svg id="perfSvg" viewBox="0 0 ${W} ${H}" width="100%" style="min-width:${W}px;max-width:${Math.round(W*1.6)}px">${s}${flip?holes+bodies:bodies+holes}<g opacity="${perfFocus?.15:1}">${tr}</g>${pins}${labels}${a1}</svg>`;
+  // onde vai cada peça
+  const fxh=(x,y)=>holeName(x,y);
+  const dirTxt=(dx,dy)=>Math.abs(dx)>=Math.abs(dy)?(dx>0?'a direita (coluna '+colName(C-1)+')':'a esquerda (coluna A)'):(dy>0?'baixo (linha '+R+')':'cima (linha 1)');
+  const order=[...r.parts].sort((a,b)=>(a.c.papel==='placa'?0:a.c.tipo==='botao6'?2:1)-(b.c.papel==='placa'?0:b.c.tipo==='botao6'?2:1));
+  let stepN=0;const placeSteps=order.map(pl=>{const c=pl.c;const ph=partHex[c.id];const nm=esc(c.nome.split(/[ (]/)[0]);const pos=P.perf.pos[c.id];const hn=p=>fxh(p.gx,p.gy);let t='',lines=[];
+    if(c.papel==='placa'){const n1=(c.fp?.r1||[]).length;const r1=pl.pins.slice(0,n1),r2=pl.pins.slice(n1);
+      t=`Soquete do ${nm}: 2 barras de pinos fêmea`;
+      [[r1,1],[r2,2]].forEach(([rw,k])=>{if(rw.length)lines.push(`Barra ${k} (1×${rw.length}): do furo <b>${hn(rw[0])}</b> ao <b>${hn(rw[rw.length-1])}</b>. O pino <b>${esc(shortPin(rw[0].name))}</b> do ESP cai em ${hn(rw[0])}.`)});
+      const ref=r1.length>1?r1:r2;if(ref.length>1)lines.push(`Encaixe o ESP com a <b>USB virada para ${dirTxt(ref[ref.length-1].gx-ref[0].gx,ref[ref.length-1].gy-ref[0].gy)}</b>, como na etiqueta USB do desenho.`);
+      lines.push('Dica: solde as barras com o ESP encaixado nelas, para ficarem alinhadas; depois tire o ESP.')}
+    else if(c.tipo==='botao6'){const A=pl.pins.find(p=>p.name==='A'),B=pl.pins.find(p=>p.name==='B'),nc=pl.pins.filter(p=>p.name==='—');
+      t=`Botão ${nm} (6×6): 4 pernas`;lines.push(`Pernas nos furos <b>${pl.pins.map(hn).join(', ')}</b>. Abra um pouco as pernas para entrarem.`);
+      lines.push(`A perna <b>A</b> (vai no GPIO) fica em <b>${hn(A)}</b> e a <b>B</b> (vai no GND) em <b>${hn(B)}</b>, em diagonal. As outras (${nc.map(hn).join(', ')}) ficam sem trilha.`)}
+    else if(pos&&pos.modo==='direto'){t=`${nm}: soldado direto`;lines.push(pl.pins.map(p=>`<b>${hn(p)}</b> ${esc(shortPin(p.name))}`).join(' · '))}
+    else{t=`Conector do ${nm}: barra de pinos macho 1×${pl.pins.length}`;lines.push(`Do furo <b>${hn(pl.pins[0])}</b> ao <b>${hn(pl.pins[pl.pins.length-1])}</b>, nesta ordem: ${pl.pins.map(p=>`<b>${hn(p)}</b> ${esc(shortPin(p.name))}`).join(' · ')}.`);
+      lines.push(`O ${nm} fica fora da placa: um cabo de ${pl.pins.length} jumpers fêmea–fêmea liga cada pino da barra ao pino de mesmo nome no ${nm}.`)}
+    return `<li data-focus="${c.id}" style="--c:${ph}" class="${perfFocus===c.id?'on':''}"><b>${++stepN}. ${t}</b>${lines.map(l=>`<div class="small">${l}</div>`).join('')}</li>`}).join('');
+  const placeHTML=r.parts.length?`<h3 style="margin-top:.8rem">Onde vai cada peça</h3>
+    <p class="small muted">Use a <b>vista de cima</b>: segure a placa com o furo <b>A1</b> (marcado com um círculo branco) no canto de cima à esquerda. Clique num passo para ver só aquela peça no desenho. ${flip?'<button class="mini" data-view="cima">ver de cima</button>':''}</p>
+    <ol class="place">${placeSteps}</ol><p class="small muted">Com tudo encaixado e soldado, vire a placa e siga o mapa de solda abaixo.</p>`:'';
 
   // bandeja
   const trayItems=P.comps.filter(c=>c.papel!=='pcb').map(c=>{const pos=P.perf.pos[c.id];const pl=r.parts.find(x=>x.c.id===c.id);
@@ -1330,6 +1376,7 @@ function renderPerf(){
        ${r.problems.map(t=>`<div class="alert err">${esc(t)}</div>`).join('')}
        <h3>Peças na placa</h3><ul class="tray">${trayItems}</ul>
        <p class="small muted">Módulos grandes (tela) costumam ficar fora: na placa entra só uma barra de pinos, e o módulo chega por um cabo curto. Assim a tela fica livre para ir na tampa.</p>
+       ${placeHTML}
        <h3 style="margin-top:.8rem">Mapa de solda ${placed?`<span class="small" style="font-weight:400;color:${totalFail?'var(--warn)':'var(--ok)'}">· ${totalFail?totalFail+' ligação(ões) precisam de fio por cima':'tudo passa por baixo'}</span>`:''}</h3>
        <p class="small muted">Ordem: 1) solde as barras de pinos (fêmea para o ESP, assim ele sai da placa); 2) GND e 3V3; 3) sinais. Teste cada nó com o multímetro ao terminar.</p>
        ${steps||'<p class="muted small">Coloque as peças para ver as trilhas.</p>'}
@@ -1337,10 +1384,11 @@ function renderPerf(){
    </div>`;
 }
 $('#perfBox').addEventListener('click',e=>{
-  const t=e.target.closest('button,[data-h],[data-part]');if(!t)return;
+  const t=e.target.closest('button,[data-h],[data-part],[data-focus]');if(!t)return;
   if(t.dataset.addperf){const c=compFromPreset(t.dataset.addperf);P.comps.push(c);P.perf={id:c.id,pos:{},view:'baixo'};const sk=autoArrange();renderComps();dirty();renderPerf();if(sk.length)flashPerf('Não couberam: '+sk.join(', ')+'. Ficam fora, ligadas por cabo.');return}
   if(t.dataset.view){P.perf.view=t.dataset.view;dirty();renderPerf();return}
   if(t.hasAttribute('data-auto')){const sk=autoArrange();dirty();renderPerf();if(sk.length)flashPerf('Não couberam: '+sk.join(', ')+'. Tente a placa maior, ou deixe como cabo.');return}
+  if(t.dataset.focus){perfFocus=perfFocus===t.dataset.focus?null:t.dataset.focus;renderPerf();return}
   if(t.dataset.pick){selPart=selPart===t.dataset.pick?null:t.dataset.pick;renderPerf();return}
   if(t.dataset.rot){const p=P.perf.pos[t.dataset.rot];p.rot=((p.rot|0)+1)%4;dirty();renderPerf();return}
   if(t.dataset.off){delete P.perf.pos[t.dataset.off];if(selPart===t.dataset.off)selPart=null;dirty();renderPerf();return}
