@@ -23,7 +23,7 @@ Também tem **Minhas peças** (peças com medidas e pinagem próprias), **Meu ma
 É um único `index.html`, sem build.
 
 - **Dentro do Claude** (artifact): IA, salvamento na conta e download funcionam.
-- **Fora do Claude** (GitHub Pages, Render, abrir o arquivo): diagrama, bancada 3D, placa perfurada, case 3D, `.stl` e o pacote de exportação funcionam; os projetos ficam salvos só no navegador. A IA (começar por uma ideia, análise e chat) não funciona fora do Claude.
+- **Fora do Claude** (GitHub Pages, Render, abrir o arquivo): diagrama, bancada 3D, placa perfurada, case 3D, `.stl` e o pacote de exportação funcionam; os projetos ficam salvos só no navegador. Para a IA (começar por uma ideia, análise e chat) funcionar fora do Claude, clique em **IA: configurar** e cole a sua chave da API da Anthropic (console.anthropic.com). Ela fica guardada só no seu navegador e o uso é cobrado na sua conta da API.
 
 ## Avisos
 

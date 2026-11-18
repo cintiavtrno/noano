@@ -229,6 +229,7 @@ pre.code{background:#0b1114;border:1px solid var(--line);border-radius:8px;paddi
     <button id="novoProj">+ novo</button>
     <button id="renProj" class="ghost">renomear</button>
     <button id="delProj" class="ghost">apagar</button>
+    <button id="aiKeyBtn" class="ghost" onclick="openKeyDialog()">IA: configurar</button>
     <span id="saveStatus" aria-live="polite"></span>
   </div>
 </header>
@@ -609,7 +610,7 @@ function dialog(html){return new Promise(res=>{
   d.style.cssText='position:fixed;inset:0;background:#000a;display:grid;place-items:center;z-index:50';
   d.innerHTML=`<form class="card" style="min-width:min(380px,90vw)">${html}<div class="row" style="justify-content:flex-end;margin-top:.8rem"><button type="button" data-x>cancelar</button><button class="prim">ok</button></div></form>`;
   document.body.appendChild(d);const f=d.querySelector('form');const inp=f.querySelector('input');(inp||f.querySelector('.prim')).focus();
-  f.onsubmit=e=>{e.preventDefault();d.remove();res(inp?inp.value.trim():true)};
+  f.onsubmit=e=>{e.preventDefault();const sel=f.querySelector('#dlgModel');if(sel)lsSet(MODEL_LS,sel.value);d.remove();res(inp?inp.value.trim():true)};
   f.querySelector('[data-x]').onclick=()=>{d.remove();res(null)};
 })}
 const askText=(t,v='')=>dialog(`<h3>${esc(t)}</h3><input style="width:100%;margin-top:.6rem" value="${esc(v)}">`);
@@ -710,7 +711,7 @@ $('#compList').addEventListener('click',async e=>{
   renderComps();dirty();
 });
 async function askPinout(c,msg){
-  const sample=await getSample();if(!sample){msg.textContent='IA indisponível nesta visualização.';return}
+  const sample=await getSample();if(!sample){msg.innerHTML=aiUnavailable();return}
   msg.textContent='Perguntando à IA…';
   const prompt=`Preciso da pinagem FÍSICA da placa "${c.nome}" (medidas aproximadas ${c.L}×${c.W} mm), para posicioná-la numa placa perfurada de 2,54 mm.
 Se houver fotos anexadas, use a serigrafia visível para confirmar. Se não tiver certeza de algum pino, diga em "observacao".
@@ -767,7 +768,53 @@ $('#thumbs').onclick=e=>{const id=e.target.dataset.rmph;if(!id)return;P.fotos=P.
 
 /* ============ IA ============ */
 let sampleFn=null;
-async function getSample(){if(sampleFn)return sampleFn;if(!window.claude?.use)return null;sampleFn=await claude.use('sample').catch(()=>null);return sampleFn}
+/* IA: dentro do Claude usa a capacidade "sample"; fora (GitHub Pages etc.) usa a chave da API da própria pessoa, guardada só neste navegador */
+const KEY_LS='noano:apikey',MODEL_LS='noano:model';
+const lsGet=k=>{try{return localStorage.getItem(k)||''}catch(e){return''}};
+const lsSet=(k,v)=>{try{v?localStorage.setItem(k,v):localStorage.removeItem(k);return true}catch(e){return false}};
+const inClaude=()=>!!(window.claude&&window.claude.use);
+async function blobToB64(b){const buf=new Uint8Array(await b.arrayBuffer());let s='';for(let i=0;i<buf.length;i+=0x8000)s+=String.fromCharCode.apply(null,buf.subarray(i,i+0x8000));return btoa(s)}
+async function apiSample(input,opts={}){
+  const key=lsGet(KEY_LS);if(!key)throw{code:'no_key',message:'sem chave da API'};
+  const model=lsGet(MODEL_LS)||'claude-sonnet-5-5';
+  let messages=typeof input==='string'?[{role:'user',content:input}]:input.map(m=>({role:m.role,content:m.content}));
+  if(opts.images&&opts.images.length){const imgs=[];for(const b of opts.images)imgs.push({type:'image',source:{type:'base64',media_type:b.type||'image/jpeg',data:await blobToB64(b)}});
+    const first=messages.findIndex(m=>m.role==='user');messages[first]={role:'user',content:[...imgs,{type:'text',text:messages[first].content}]}}
+  const res=await fetch('https://api.anthropic.com/v1/messages',{method:'POST',signal:opts.signal,headers:{'x-api-key':key,'anthropic-version':'2023-06-01','content-type':'application/json','anthropic-dangerous-direct-browser-access':'true'},
+    body:JSON.stringify({model,max_tokens:16000,stream:true,messages})});
+  if(!res.ok){let m='';try{m=(await res.json()).error?.message||''}catch(e){}throw{code:res.status===401?'bad_key':res.status===429?'rate_limited':'api_'+res.status,message:m||('erro '+res.status)}}
+  const rd=res.body.getReader();const dec=new TextDecoder();let buf='',text='';
+  for(;;){const{done,value}=await rd.read();if(done)break;buf+=dec.decode(value,{stream:true});let i;
+    while((i=buf.indexOf('\n\n'))>=0){const ev=buf.slice(0,i);buf=buf.slice(i+2);const line=ev.split('\n').find(l=>l.startsWith('data:'));if(!line)continue;
+      try{const d=JSON.parse(line.slice(5));if(d.type==='content_block_delta'&&d.delta?.text){text+=d.delta.text;opts.onText&&opts.onText({text,delta:d.delta.text})}else if(d.type==='error')throw{code:'api',message:d.error?.message}}catch(e){if(e.code)throw e}}}
+  return{text,truncated:false};
+}
+apiSample.limits=async()=>({images:true});
+async function getSample(){
+  if(sampleFn)return sampleFn;
+  if(inClaude()){const s=await claude.use('sample').catch(()=>null);if(s){sampleFn=s;return s}}
+  if(lsGet(KEY_LS))return apiSample;
+  return null;
+}
+function aiUnavailable(){
+  const why=inClaude()
+    ?'Dentro do Claude, a IA desta página não foi liberada para esta visualização. Tente abrir o link do artifact numa aba própria (claude.ai), logada na sua conta, e aceitar o pedido de permissão.'
+    :'Você está vendo a página fora do Claude (GitHub Pages ou arquivo no computador). Aqui a IA do Claude não chega, mas dá para usar a sua própria chave da API da Anthropic.';
+  return `<div class="alert err">${why}<div class="row" style="margin-top:.5rem">${inClaude()?'':'<button class="mini prim" onclick="openKeyDialog()">usar minha chave da API</button>'}<a class="small" href="https://claude.ai/artifact/HcziqdKFtDxZS9sbk4iRxx" target="_blank" rel="noopener">abrir no Claude</a></div></div>`;
+}
+async function openKeyDialog(){
+  const cur=lsGet(KEY_LS),model=lsGet(MODEL_LS)||'claude-sonnet-5-5';
+  const r=await dialog(`<h3>IA com a sua chave da API</h3>
+    <p class="small muted">Para usar fora do Claude. A chave fica guardada <b>só neste navegador</b> (não vai para o GitHub nem para o projeto) e cada análise é cobrada na sua conta da API. Crie a chave em console.anthropic.com. Não use em computador compartilhado.</p>
+    <input type="password" style="width:100%;margin-top:.4rem" placeholder="sk-ant-…" value="${esc(cur)}" autocomplete="off">
+    <label class="small" style="display:block;margin-top:.5rem">Modelo <select id="dlgModel">${[['claude-sonnet-5-5','Sonnet 5.5 (mais barato, recomendado)'],['claude-opus-5-5','Opus 5.5 (mais forte)'],['claude-haiku-5-5','Haiku 5.5 (mais rápido)']].map(([v,l])=>`<option value="${v}" ${v===model?'selected':''}>${l}</option>`).join('')}</select></label>
+    ${cur?'<p class="small muted">Deixe vazio e clique ok para apagar a chave.</p>':''}`);
+  if(r===null)return;
+  const m=document.getElementById('dlgModel');
+  lsSet(KEY_LS,r);sampleFn=null;
+  $('#aiKeyBtn').textContent=r?'IA: sua chave ✓':'IA: configurar';
+}
+window.openKeyDialog=openKeyDialog;
 function dataURLtoBlob(d){const[h,b]=d.split(',');const mime=h.match(/:(.*?);/)[1];const bin=atob(b);const a=new Uint8Array(bin.length);for(let i=0;i<bin.length;i++)a[i]=bin.charCodeAt(i);return new Blob([a],{type:mime})}
 function projectContext(){
   return {
@@ -783,7 +830,7 @@ function extractJSON(t){const a=t.indexOf('{'),b=t.lastIndexOf('}');if(a<0||b<a)
 $('#analisar').onclick=async()=>{
   const btn=$('#analisar');const prog=$('#aiProgress');
   const sample=await getSample();
-  if(!sample){prog.innerHTML='<div class="alert err">A IA não está disponível nesta visualização. Abra a página pelo link do Claude, logada na sua conta.</div>';return}
+  if(!sample){prog.innerHTML=aiUnavailable();return}
   if(!P.codigo.trim()&&!P.fotos.length){prog.innerHTML='<div class="alert">Cole o código ou envie ao menos uma foto.</div>';return}
   btn.disabled=true;prog.textContent='Lendo código e fotos…';
   const presets=Object.entries(PRESETS).map(([k,v])=>({tipo:k,nome:v.nome,papel:v.papel,pinos:v.pinos,medidas_aprox_mm:[v.L,v.W,v.H]}));
@@ -840,14 +887,14 @@ ${(P.codigo||'(sem código)').slice(0,24000)}`;
     prog.textContent='';
   }catch(e){
     console.error(e);
-    prog.innerHTML=`<div class="alert err">${e.code==='not_granted'?'Você não autorizou a IA nesta página.':e.code==='rate_limited'?'Muitas chamadas seguidas. Espere um pouco e tente de novo.':'Não consegui concluir: '+esc(e.message||e.code||e)}</div>`;
+    prog.innerHTML=`<div class="alert err">${e.code==='bad_key'?'A chave da API foi recusada. Confira em “IA: configurar”.':e.code==='not_granted'?'Você não autorizou a IA nesta página.':e.code==='rate_limited'?'Muitas chamadas seguidas. Espere um pouco e tente de novo.':'Não consegui concluir: '+esc(e.message||e.code||e)}</div>`;
   }finally{btn.disabled=false}
 };
 /* ---- começar por uma ideia ---- */
 $('#ideiaBtn').onclick=async()=>{
   const ideia=$('#ideiaIn').value.trim();const out=$('#ideiaOut');const btn=$('#ideiaBtn');
   if(!ideia){out.innerHTML='<div class="alert">Escreva o que você quer fazer.</div>';return}
-  const sample=await getSample();if(!sample){out.innerHTML='<div class="alert err">A IA não está disponível nesta visualização. Abra a página pelo link do Claude.</div>';return}
+  const sample=await getSample();if(!sample){out.innerHTML=aiUnavailable();return}
   const tem=[...MAT_PADRAO,...MAT.extras].filter(temMat);
   const catalogo=[...Object.entries(MYPARTS).map(([k,v])=>({tipo:'my:'+k,nome:v.nome,papel:v.papel,pinos:v.papel==='placa'?{fileira1:v.fp?.r1||[],fileira2:v.fp?.r2||[]}:v.pinos,minha:true})),
     ...Object.entries(PRESETS).filter(([k,v])=>v.papel!=='pcb'&&k!=='custom').map(([k,v])=>({tipo:k,nome:v.nome,papel:v.papel,pinos:v.papel==='placa'?{fileira1:v.fp?.r1||[],fileira2:v.fp?.r2||[]}:v.pinos}))];
@@ -891,7 +938,7 @@ Responda APENAS com JSON válido:
     np.ideia={texto:ideia,faltando:j.faltando||[],bibliotecas:j.bibliotecas||[]};
     P=np;await saveProject(P).catch(()=>{});await refreshProjSel();renderAll();
     out.innerHTML=`<div class="alert" style="border-color:var(--ok);background:#13261f">Projeto <b>${esc(P.nome)}</b> criado: ${P.comps.length} peças, ${P.nos.length} nós e o código. <button class="mini prim" onclick="benchMode='proto';go(5)">ver na protoboard 3D →</button></div>`;
-  }catch(e){console.error(e);out.innerHTML=`<div class="alert err">${e.code==='not_granted'?'Você não autorizou a IA nesta página.':e.code==='rate_limited'?'Muitas chamadas seguidas. Espere um pouco.':'Não consegui: '+esc(e.message||e.code||e)}</div>`}
+  }catch(e){console.error(e);out.innerHTML=`<div class="alert err">${e.code==='bad_key'?'A chave da API foi recusada. Confira em “IA: configurar”.':e.code==='not_granted'?'Você não autorizou a IA nesta página.':e.code==='rate_limited'?'Muitas chamadas seguidas. Espere um pouco.':'Não consegui: '+esc(e.message||e.code||e)}</div>`}
   finally{btn.disabled=false}
 };
 function applyAnalysis(j){
@@ -2004,7 +2051,7 @@ function renderChat(){
 $('#chatIn').addEventListener('keydown',e=>{if(e.key==='Enter'&&!e.shiftKey){e.preventDefault();$('#chatForm').requestSubmit()}});
 $('#chatForm').onsubmit=async e=>{
   e.preventDefault();const q=$('#chatIn').value.trim();if(!q)return;
-  const sample=await getSample();if(!sample){P.chat.push({role:'user',content:q},{role:'assistant',content:'A IA não está disponível nesta visualização. Abra pelo link do Claude.'});renderChat();return}
+  const sample=await getSample();if(!sample){$('#chatLog').insertAdjacentHTML('beforeend',aiUnavailable());return}
   $('#chatIn').value='';P.chat.push({role:'user',content:q});renderChat();
   const ctx=`Você é tutora de eletrônica e impressão 3D de uma pessoa que monta projetos ESP32. Responda em português do Brasil, curto, didático, com passos numerados quando for procedimento. Se não souber algo do circuito dela, diga e peça a informação.\n\nPROJETO (JSON):\n${JSON.stringify(projectContext())}\n\nCÓDIGO (início):\n${(P.codigo||'(sem código)').slice(0,8000)}\n\n`;
   const hist=P.chat.slice(-12).map((m,i,arr)=>({role:m.role,content:m.content}));
@@ -2031,6 +2078,7 @@ function renderAll(){
   renderPresetSel();renderMat();
   await initStore();
   await loadLibrary();renderPresetSel();renderMat();
+  (async()=>{const ok=inClaude()&&await claude.use('sample').catch(()=>null);$('#aiKeyBtn').hidden=inClaude();$('#aiKeyBtn').textContent=lsGet(KEY_LS)?'IA: sua chave ✓':'IA: configurar'})();
   try{
     const list=await listProjects();
     if(list.length){list.sort((a,b)=>(b.criado||0)-(a.criado||0));const p=await loadProject(list[0].id);if(p)P=p}
