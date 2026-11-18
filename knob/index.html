@@ -1,0 +1,239 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>knob · chá e cozinha — prévia para ESP32-S3 + TFT</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Atkinson+Hyperlegible:wght@400;700&family=Bricolage+Grotesque:opsz,wght@12..96,500;12..96,800&display=swap" rel="stylesheet">
+<style>
+:root{--bg:#0c1215;--panel:#131b1f;--line:#26343c;--text:#e9eff1;--muted:#9aabb3;--lima:#d8f05a;--cobre:#e8a066}
+*{box-sizing:border-box}
+html,body{margin:0;background:var(--bg);color:var(--text);font:16px/1.5 "Atkinson Hyperlegible",system-ui,sans-serif}
+body{background-image:radial-gradient(circle at 1px 1px,#1f2c33 1.1px,transparent 1.3px);background-size:12px 12px;min-height:100vh}
+h1,h2,h3{font-family:"Bricolage Grotesque",system-ui,sans-serif;margin:0;line-height:1.15}
+main{max-width:1180px;margin:0 auto;padding:1.4rem}
+.top h1{font-size:2rem;font-weight:800;letter-spacing:-.02em}
+.top h1 span{color:var(--lima)}
+.top p{color:var(--muted);margin:.3rem 0 1.2rem;max-width:72ch}
+.grid{display:grid;grid-template-columns:minmax(0,1.1fr) minmax(0,1fr);gap:1.4rem;align-items:start}
+@media (max-width:900px){.grid{grid-template-columns:1fr}}
+.device{background:linear-gradient(160deg,#1c2a2f,#10181b);border:1px solid var(--line);border-radius:22px;padding:1.2rem;display:flex;flex-direction:column;align-items:center;gap:1rem}
+.bezel{width:100%;max-width:660px;background:#06090a;border-radius:12px;padding:12px;box-shadow:0 0 0 2px #26343c,0 20px 40px #0008}
+#scr{display:block;image-rendering:pixelated;width:100%;aspect-ratio:160/128;border-radius:3px;background:#000}
+.ctrl{display:flex;gap:1.4rem;align-items:center;flex-wrap:wrap;justify-content:center}
+.knob{position:relative;width:150px;height:150px;border-radius:50%;background:radial-gradient(circle at 40% 35%,#2b3a42,#121a1e 70%);border:1px solid #3a4c56;touch-action:none;cursor:grab;user-select:none}
+.knob:active{cursor:grabbing}
+.knob .cap{position:absolute;inset:38px;border-radius:50%;background:radial-gradient(circle at 40% 35%,#3b4b54,#161f24);box-shadow:0 6px 14px #0009}
+.knob .dot{position:absolute;width:12px;height:12px;border-radius:50%;background:var(--lima);left:69px;top:10px;transform-origin:6px 65px;box-shadow:0 0 10px var(--lima)}
+.knob .hint{position:absolute;inset:0;display:grid;place-items:center;font-size:.72rem;color:var(--muted);pointer-events:none}
+.btns{display:flex;flex-direction:column;gap:.6rem}
+button{font:inherit;color:inherit;cursor:pointer;background:#18232a;border:1px solid var(--line);border-radius:9px;padding:.5em .9em}
+button:hover{border-color:#3b4d57}
+button.pb{width:56px;height:56px;border-radius:50%;background:radial-gradient(circle at 40% 35%,#30363b,#111);font-weight:800}
+.bar{width:100%;max-width:660px;height:6px;background:#1b262c;border-radius:9px;overflow:hidden}
+.bar i{display:block;height:100%;width:0;background:linear-gradient(90deg,var(--cobre),var(--lima))}
+.card{background:var(--panel);border:1px solid var(--line);border-radius:12px;padding:1rem 1.1rem}
+.card+.card{margin-top:1rem}
+.scenes{display:grid;grid-template-columns:repeat(4,1fr);gap:.5rem;margin-top:.6rem}
+.scenes button{padding:.5rem .3rem;font-size:.9rem}
+.scenes button[aria-pressed=true]{border-color:var(--lima);box-shadow:0 0 0 1px var(--lima) inset}
+.muted{color:var(--muted)}.small{font-size:.88rem}
+ol,ul{margin:.4rem 0 0 1.1rem;padding:0}li{margin:.25rem 0}
+code{color:var(--cobre);font-size:.9em}
+:focus-visible{outline:2px solid var(--cobre);outline-offset:2px}
+@media (prefers-reduced-motion:reduce){*{transition:none!important}}
+</style>
+</head>
+<body>
+<main>
+  <header class="top">
+    <h1>knob · <span>chá</span> e cozinha</h1>
+    <p>Prévia do que vai aparecer na sua tela TFT 1,8" (160 × 128). Gire o botão abaixo da tela com o mouse ou o dedo, como você vai girar o joystick em círculo: a animação anda para a frente e para trás com o seu gesto. Inspirado no trabalho de um artista que usa um módulo AMOLED com knob; estas cenas são desenhos novos, feitos por código.</p>
+  </header>
+  <div class="grid">
+    <div class="device">
+      <div class="bezel"><canvas id="scr" width="160" height="128" aria-label="tela simulada"></canvas></div>
+      <div class="bar" aria-hidden="true"><i id="barI"></i></div>
+      <div class="ctrl">
+        <div class="btns"><button class="pb" id="bB" title="botão B: cena anterior">B</button><span class="small muted" style="text-align:center">anterior</span></div>
+        <div class="knob" id="knob" role="slider" tabindex="0" aria-label="knob: gire para avançar a animação" aria-valuemin="0" aria-valuemax="100" aria-valuenow="0"><div class="cap"></div><div class="dot" id="dot"></div><div class="hint">gire</div></div>
+        <div class="btns"><button class="pb" id="bA" title="botão A: próxima cena">A</button><span class="small muted" style="text-align:center">próxima</span></div>
+      </div>
+      <p class="small muted" style="margin:0">Também funciona com a rodinha do mouse e com as setas ← →. Clique no knob (o “clique” do joystick) volta a cena ao começo.</p>
+    </div>
+    <div>
+      <div class="card">
+        <h3>Cenas</h3>
+        <div class="scenes" id="scenes"></div>
+        <p class="small muted" id="sceneTxt"></p>
+      </div>
+      <div class="card">
+        <h3>Como o joystick vira um knob</h3>
+        <ol class="small">
+          <li>O joystick tem dois eixos (X e Y). Com a alavanca encostada na borda, o código calcula o <b>ângulo</b> dela.</li>
+          <li>Girando a alavanca em círculo, o ângulo muda; o código soma essas mudanças. Sentido horário avança a cena, anti-horário volta.</li>
+          <li>Uma volta completa anda 40% da cena; para cada cena são umas duas voltas e meia.</li>
+          <li>Segurar a alavanca para a direita (ou esquerda) também anda, devagar, para quem preferir.</li>
+          <li>O clique do joystick volta a cena ao começo; os botões A e B trocam de cena.</li>
+        </ol>
+      </div>
+      <div class="card">
+        <h3>Na placa</h3>
+        <ul class="small">
+          <li>Mesma montagem do jogo: ESP32-S3, TFT 1,8" e os 2 botões, nos mesmos pinos.</li>
+          <li>Joystick: <code>VRx → GPIO4</code>, <code>VRy → GPIO5</code>, <code>SW → GPIO6</code>, <code>GND → GND</code> e <code>+5V → 3V3</code> (no 3V3, não no 5V: a leitura analógica do ESP só aguenta 3,3 V).</li>
+          <li>O código está em <code>knob-cha-cozinha.ino</code>, com o <code>pinos.h</code>.</li>
+        </ul>
+      </div>
+    </div>
+  </div>
+</main>
+<script>
+/* ======= mesma lógica do .ino: pixels 160×128, polígonos preenchidos por linhas ======= */
+const W=160,H=128;
+const cv=document.getElementById('scr'),cx2=cv.getContext('2d');const img=cx2.createImageData(W,H);const D=img.data;
+const rgb=h=>[parseInt(h.slice(1,3),16),parseInt(h.slice(3,5),16),parseInt(h.slice(5,7),16)];
+/* reduz para RGB565 e volta, para a cor ser a que a TFT mostra */
+const C=h=>{const[r,g,b]=rgb(h);const R=r>>3,G=g>>2,B=b>>3;return[(R<<3)|(R>>2),(G<<2)|(G>>4),(B<<3)|(B>>2)]};
+const COL={preto:C('#000000'),branco:C('#f2f2ee'),cinza:C('#6e787d'),lima:C('#d8f05a'),limaEsc:C('#7f9a1e'),limaFun:C('#2c3a08'),
+  pepCasca:C('#2f7d3a'),pepPolpa:C('#c8ec8a'),pepSem:C('#8fbf55'),laranja:C('#ff8a1f'),laranjaEsc:C('#b85a0c'),folha:C('#5fbf4a'),
+  batCasca:C('#b07a3e'),batPinta:C('#7a5024'),batPolpa:C('#f4e2a0'),lamina:C('#9aa4a9'),cabo:C('#3a2a20'),madeira:C('#5a4632'),cobre:C('#e8a066')};
+function clear(){for(let i=0;i<D.length;i+=4){D[i]=0;D[i+1]=0;D[i+2]=0;D[i+3]=255}}
+function px(x,y,c){x|=0;y|=0;if(x<0||y<0||x>=W||y>=H)return;const i=(y*W+x)*4;D[i]=c[0];D[i+1]=c[1];D[i+2]=c[2]}
+function hline(x0,x1,y,c){for(let x=x0;x<=x1;x++)px(x,y,c)}
+function line(x0,y0,x1,y1,c){x0=Math.round(x0);y0=Math.round(y0);x1=Math.round(x1);y1=Math.round(y1);
+  const dx=Math.abs(x1-x0),sx=x0<x1?1:-1,dy=-Math.abs(y1-y0),sy=y0<y1?1:-1;let e=dx+dy;
+  for(;;){px(x0,y0,c);if(x0===x1&&y0===y1)break;const e2=2*e;if(e2>=dy){e+=dy;x0+=sx}if(e2<=dx){e+=dx;y0+=sy}}}
+function thick(x0,y0,x1,y1,c){line(x0,y0,x1,y1,c);if(Math.abs(x1-x0)>Math.abs(y1-y0))line(x0,y0+1,x1,y1+1,c);else line(x0+1,y0,x1+1,y1,c)}
+function fillPoly(p,c){let y0=1e9,y1=-1e9;for(const q of p){y0=Math.min(y0,q[1]);y1=Math.max(y1,q[1])}
+  for(let y=Math.max(0,Math.ceil(y0-.5));y<=Math.min(H-1,Math.floor(y1-.5));y++){const yy=y+.5;const xs=[];
+    for(let i=0;i<p.length;i++){const a=p[i],b=p[(i+1)%p.length];if((a[1]<=yy&&b[1]>yy)||(b[1]<=yy&&a[1]>yy))xs.push(a[0]+(yy-a[1])*(b[0]-a[0])/(b[1]-a[1]))}
+    xs.sort((m,n)=>m-n);for(let k=0;k+1<xs.length;k+=2)hline(Math.round(xs[k]),Math.round(xs[k+1])-1,y,c)}}
+function poly(p,c,closed=true){for(let i=0;i<p.length-(closed?0:1);i++){const a=p[i],b=p[(i+1)%p.length];line(a[0],a[1],b[0],b[1],c)}}
+function ell(cx,cy,rx,ry,n=24,a0=0,a1=Math.PI*2){const o=[];for(let i=0;i<=n;i++){const a=a0+(a1-a0)*i/n;o.push([cx+Math.cos(a)*rx,cy+Math.sin(a)*ry])}if(a1-a0>=Math.PI*2-1e-6)o.pop();return o}
+function xf(p,ang,tx,ty){const c=Math.cos(ang),s=Math.sin(ang);return p.map(([x,y])=>[x*c-y*s+tx,x*s+y*c+ty])}
+const clamp=(v,a,b)=>v<a?a:v>b?b:v,lerp=(a,b,t)=>a+(b-a)*t,ss=(a,b,x)=>{const t=clamp((x-a)/(b-a),0,1);return t*t*(3-2*t)};
+const mix=(c1,c2,t)=>[Math.round(lerp(c1[0],c2[0],t)),Math.round(lerp(c1[1],c2[1],t)),Math.round(lerp(c1[2],c2[2],t))];
+function rnd(i){let x=Math.sin(i*127.1+311.7)*43758.5453;return x-Math.floor(x)}
+
+/* ---------- cena 1: chá ---------- */
+function cenaCha(p,t){
+  const f=ss(.38,.82,p);                         // nível do chá na xícara
+  const tilt=-(ss(.12,.36,p)-ss(.84,.98,p))*1.0; // inclinação do bule
+  const go=ss(.08,.34,p)-ss(.86,.99,p);          // bule se aproxima
+  // pires e xícara
+  poly(ell(48,111,20,3,20),COL.cinza);
+  const cup=[[37,90],[59,90],[56,108],[40,108]];
+  if(f>0){const ly=lerp(107,92,f);const k0=(ly-90)/18;fillPoly([[lerp(37,40,k0),ly],[lerp(59,56,k0),ly],[56,108],[40,108]],COL.lima);
+    hline(Math.round(lerp(37,40,k0)),Math.round(lerp(59,56,k0)),Math.round(ly),COL.branco)}
+  poly(cup,COL.branco);poly(ell(48,90,11,2,16),COL.branco);
+  poly(ell(62,98,4,5,10,-Math.PI/2,Math.PI/2),COL.branco,false);
+  // vapor
+  if(f>.55){const a=ss(.55,.85,f);for(const sx of[44,52]){let prev=null;for(let y=86;y>=86-18*a;y-=2){const x=sx+Math.sin(y*.35+t*3+sx)*2;if(prev)line(prev[0],prev[1],x,y,COL.cinza);prev=[x,y]}}}
+  // bule (local: corpo no centro, bico à esquerda, alça à direita)
+  const bx=lerp(114,86,go),by=lerp(80,56,go);
+  const body=xf(ell(0,0,17,12,28),tilt,bx,by);
+  const resto=1-f*.85;fillPoly(body,mix(COL.limaFun,COL.lima,resto));
+  // brilho do chá dentro do bule
+  fillPoly(xf(ell(-3,3,10,6,16),tilt,bx,by),mix(COL.limaFun,COL.lima,Math.min(1,resto+.2)));
+  poly(body,COL.branco);
+  const sp1=xf([[-15,2],[-24,-3],[-30,-10]],tilt,bx,by),sp2=xf([[-14,7],[-26,0],[-31,-8]],tilt,bx,by);
+  poly(sp1,COL.branco,false);poly(sp2,COL.branco,false);
+  poly(xf(ell(18,0,6,8,12,-Math.PI/2,Math.PI/2),tilt,bx,by),COL.branco,false);
+  poly(xf(ell(0,-12,8,2.5,14),tilt,bx,by),COL.branco);
+  poly(xf(ell(0,-16,2.2,2.2,8),tilt,bx,by),COL.branco);
+  // fio de chá
+  const s=ss(.3,.4,p)*(1-ss(.8,.88,p));
+  if(s>.05){const T=xf([[-30.5,-9]],tilt,bx,by)[0];const E=[48,lerp(92,105,1-f)];let prev=T;
+    for(let i=1;i<=14;i++){const u=i/14;const x=lerp(T[0],E[0],u)+Math.sin(u*Math.PI)*-4;const y=lerp(T[1],E[1],u*u);(s>.5?thick:line)(prev[0],prev[1],x,y,COL.lima);prev=[x,y]}}
+}
+/* ---------- cena 2: pepino ---------- */
+function cenaPepino(p,t){
+  const N=12,k=p*N,done=Math.min(N,Math.floor(k)),fr=k-done;
+  // tábua
+  fillPoly([[12,103],[148,103],[152,112],[8,112]],COL.madeira);poly([[12,103],[148,103],[152,112],[8,112]],COL.branco);line(8,112,8,115,COL.branco);line(152,112,152,115,COL.branco);line(8,115,152,115,COL.branco);
+  const x0=22,len=96,sw=len/N;const xEnd=x0+len-done*sw;
+  if(done<N){
+    const bodyP=[...ell(x0+6,93,6,8,10,Math.PI/2,Math.PI*1.5),[xEnd,85],[xEnd,101]];
+    fillPoly(bodyP,COL.pepCasca);poly(bodyP,COL.branco);
+    fillPoly(ell(xEnd,93,2.5,8,14),COL.pepPolpa);poly(ell(xEnd,93,2.5,8,14),COL.branco);
+    for(let i=0;i<5;i++)px(xEnd,89+i*2,COL.pepSem);
+    for(let i=0;i<6;i++){const xx=x0+10+i*14;if(xx<xEnd-3)line(xx,88,xx+5,88,COL.pepPolpa)}
+  }
+  // rodelas cortadas
+  for(let i=0;i<done;i++){const sx=124+(i%4)*6+(Math.floor(i/4)%2)*3,sy=99-Math.floor(i/4)*4;const e=ell(sx,sy,2.5,6,12);fillPoly(e,COL.pepPolpa);poly(e,COL.pepCasca);px(sx,sy,COL.pepSem)}
+  // faca
+  if(done<N){const xc=xEnd-sw;const dn=fr<.6?ss(0,.6,fr):1-ss(.6,1,fr);const ye=lerp(70,100,dn);const ang=-.12;
+    const blade=xf([[-14,0],[34,0],[34,-13],[-8,-12]],ang,xc,ye);fillPoly(blade,COL.lamina);poly(blade,COL.branco);
+    const cabo=xf([[34,-3],[60,-3],[62,-11],[34,-11]],ang,xc,ye);fillPoly(cabo,COL.cabo);poly(cabo,COL.branco);
+    const r1=xf([[42,-7],[52,-7]],ang,xc,ye);px(r1[0][0],r1[0][1],COL.branco);px(r1[1][0],r1[1][1],COL.branco)}
+}
+/* ---------- cena 3: batata ---------- */
+function cenaBatata(p,t){
+  const cx=80,cy=60,rx=26,ry=31,N=8,k=p*N,done=Math.min(N,Math.floor(k)),fr=k-done;
+  const R=a=>1+.05*Math.sin(a*3+1)+.03*Math.sin(a*5);
+  const shape=[];for(let i=0;i<36;i++){const a=i/36*Math.PI*2;shape.push([cx+Math.cos(a)*rx*R(a),cy+Math.sin(a)*ry*R(a)])}
+  fillPoly(shape,COL.batCasca);
+  for(let i=0;i<14;i++){const a=rnd(i)*Math.PI*2,r=Math.sqrt(rnd(i+50))*.8;px(cx+Math.cos(a)*rx*r,cy+Math.sin(a)*ry*r,COL.batPinta);px(cx+Math.cos(a)*rx*r+1,cy+Math.sin(a)*ry*r,COL.batPinta)}
+  // parte descascada: faixas da esquerda para a direita; a faixa atual vai de cima até o descascador
+  const left=cx-rx*1.08,stripe=(rx*2.16)/N;const pyl=lerp(cy-ry,cy+ry,fr);
+  for(let y=Math.floor(cy-ry*1.1);y<=cy+ry*1.1;y++){const lim=left+done*stripe+(y<pyl&&done<N?stripe:0);
+    const yy=y+.5;const xs=[];for(let i=0;i<shape.length;i++){const a=shape[i],b=shape[(i+1)%shape.length];if((a[1]<=yy&&b[1]>yy)||(b[1]<=yy&&a[1]>yy))xs.push(a[0]+(yy-a[1])*(b[0]-a[0])/(b[1]-a[1]))}
+    xs.sort((m,n)=>m-n);if(xs.length>=2){const a=Math.round(xs[0]),b=Math.min(Math.round(xs[xs.length-1])-1,Math.round(lim));if(b>=a)hline(a,b,y,COL.batPolpa)}}
+  poly(shape,COL.branco);
+  // cascas caídas
+  for(let i=0;i<done*2;i++){const x=40+rnd(i+9)*80,y=110+rnd(i+20)*12;line(x,y,x+3,y-1,COL.batCasca);line(x+3,y-1,x+5,y+1,COL.batCasca)}
+  // descascador
+  if(done<N){const x=left+done*stripe+stripe*.5,y=pyl;const ang=-.25;
+    const lam=xf([[-7,-3],[7,-3],[7,0],[-7,0]],ang,x,y);fillPoly(lam,COL.lamina);poly(lam,COL.branco);
+    poly(xf([[-7,-1],[-9,10],[0,14],[9,10],[7,-1]],ang,x,y),COL.branco,false);
+    const cabo=xf([[-2,14],[2,14],[3,38],[-3,38]],ang,x,y);fillPoly(cabo,COL.cabo);poly(cabo,COL.branco)}
+}
+/* ---------- cena 4: cenoura ---------- */
+function cenaCenoura(p,t){
+  const ang=-.42,gx=74,gy=58;
+  const ral=xf([[-22,-46],[22,-46],[22,46],[-22,46]],ang,gx,gy);poly(ral,COL.branco);poly(xf([[-18,-42],[18,-42],[18,42],[-18,42]],ang,gx,gy),COL.cinza);
+  for(let r=0;r<7;r++)for(let c=0;c<3;c++){const s=xf([[-12+c*12,-34+r*11],[-6+c*12,-34+r*11]],ang,gx,gy);line(s[0][0],s[0][1],s[1][0],s[1][1],COL.branco)}
+  const cabo=xf([[-6,-46],[6,-46],[6,-56],[-6,-56]],ang,gx,gy);poly(cabo,COL.branco);
+  // raspas
+  const M=Math.floor(p*90);for(let i=0;i<M;i++){const u=rnd(i+3)*2-1;const x=86+u*26,h=(1-Math.abs(u))*14*rnd(i+7);const y=124-h;const a=rnd(i+11)*3;line(x,y,x+Math.cos(a)*3,y+Math.sin(a)*2,i%3?COL.laranja:COL.laranjaEsc)}
+  // cenoura indo e voltando no ralador
+  const osc=1-Math.abs(2*((p*7)%1)-1);const along=lerp(-4,32,osc);const L=Math.max(8,46*(1-.8*p));
+  const base=xf([[0,along]],ang,gx,gy)[0];const ca=ang-1.25;
+  const carrot=xf([[0,-5],[L,-3],[L+3,0],[L,3],[0,5]],ca+Math.PI,base[0]+6,base[1]);
+  const cr=xf([[-2,-5],[L,-3.5],[L+2,0],[L,3.5],[-2,5]],0,0,0);
+  const cc=xf(cr,ca,base[0],base[1]);fillPoly(cc,COL.laranja);poly(cc,COL.branco);
+  for(let i=1;i<4;i++){const q=xf([[i*L/4,-3],[i*L/4,-1]],ca,base[0],base[1]);line(q[0][0],q[0][1],q[1][0],q[1][1],COL.laranjaEsc)}
+  const tip=xf([[L+2,0]],ca,base[0],base[1])[0];for(let i=-1;i<=1;i++){const q=xf([[L+2,0],[L+10,i*4]],ca,base[0],base[1]);line(q[0][0],q[0][1],q[1][0],q[1][1],COL.folha)}
+}
+const CENAS=[{n:'Chá',f:cenaCha,d:'O bule vem, inclina e serve; a xícara enche de verde-limão e solta vapor. Girando para trás, o chá volta para o bule.'},
+  {n:'Pepino',f:cenaPepino,d:'A faca desce e sobe; cada meia volta corta uma rodela, que vai para a pilha.'},
+  {n:'Batata',f:cenaBatata,d:'O descascador desce faixa por faixa; a casca cai e a batata vai ficando clara.'},
+  {n:'Cenoura',f:cenaCenoura,d:'A cenoura vai e volta no ralador, encurta, e as raspas formam um montinho.'}];
+
+/* ---------- estado e entrada (igual ao .ino) ---------- */
+let cena=0,alvo=0,mostrado=0;const t0=performance.now();
+function setCena(i){cena=(i+CENAS.length)%CENAS.length;alvo=0;mostrado=0;
+  document.querySelectorAll('#scenes button').forEach((b,k)=>b.setAttribute('aria-pressed',k===cena));document.getElementById('sceneTxt').textContent=CENAS[cena].d}
+document.getElementById('scenes').innerHTML=CENAS.map((c,i)=>`<button data-i="${i}">${c.n}</button>`).join('');
+document.getElementById('scenes').onclick=e=>{const b=e.target.closest('button');if(b)setCena(+b.dataset.i)};
+document.getElementById('bA').onclick=()=>setCena(cena+1);document.getElementById('bB').onclick=()=>setCena(cena-1);
+const VOLTA=.4;   // uma volta completa = 40% da cena
+const knob=document.getElementById('knob'),dot=document.getElementById('dot');let knobAng=0,last=null,moved=0;
+function angOf(e){const r=knob.getBoundingClientRect();return Math.atan2(e.clientY-(r.top+r.height/2),e.clientX-(r.left+r.width/2))}
+knob.addEventListener('pointerdown',e=>{knob.setPointerCapture(e.pointerId);last=angOf(e);moved=0});
+knob.addEventListener('pointermove',e=>{if(last===null)return;const a=angOf(e);let d=a-last;if(d>Math.PI)d-=2*Math.PI;if(d<-Math.PI)d+=2*Math.PI;last=a;moved+=Math.abs(d);girar(d)});
+knob.addEventListener('pointerup',()=>{if(moved<.05){alvo=0}last=null});
+knob.addEventListener('wheel',e=>{e.preventDefault();girar(e.deltaY>0?.25:-.25)},{passive:false});
+knob.addEventListener('keydown',e=>{if(e.key==='ArrowRight'||e.key==='ArrowUp'){girar(.3);e.preventDefault()}if(e.key==='ArrowLeft'||e.key==='ArrowDown'){girar(-.3);e.preventDefault()}if(e.key==='Enter'||e.key===' '){alvo=0;e.preventDefault()}});
+function girar(d){knobAng+=d;alvo=clamp(alvo+d/(Math.PI*2)*VOLTA,0,1)}
+setCena(0);
+function frame(){const t=(performance.now()-t0)/1000;mostrado+=(alvo-mostrado)*.25;
+  clear();CENAS[cena].f(mostrado,t);cx2.putImageData(img,0,0);
+  dot.style.transform=`rotate(${knobAng}rad)`;document.getElementById('barI').style.width=(mostrado*100)+'%';knob.setAttribute('aria-valuenow',Math.round(mostrado*100));
+  requestAnimationFrame(frame)}
+frame();
+</script>
+</body>
+</html>
