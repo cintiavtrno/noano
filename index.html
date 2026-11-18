@@ -1,0 +1,1439 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>nó a nó — montagem de projetos ESP</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Atkinson+Hyperlegible:wght@400;700&family=Bricolage+Grotesque:opsz,wght@12..96,500;12..96,800&display=swap" rel="stylesheet">
+<style>
+:root{
+  --bg:#0c1215; --panel:#131b1f; --panel2:#18232a; --line:#26343c; --text:#e9eff1; --muted:#9aabb3;
+  --cobre:#e8a066; --estanho:#cfd8dc; --ok:#3ddc97; --warn:#ffb648; --err:#ff6b5e;
+  --r:10px;
+}
+*{box-sizing:border-box}
+[hidden]{display:none!important}
+html,body{margin:0;background:var(--bg);color:var(--text);font:16px/1.5 "Atkinson Hyperlegible",system-ui,sans-serif}
+body{
+  background-image:radial-gradient(circle at 1px 1px,#1f2c33 1.1px,transparent 1.3px);
+  background-size:12px 12px; min-height:100vh;
+}
+h1,h2,h3{font-family:"Bricolage Grotesque",system-ui,sans-serif;margin:0;line-height:1.15}
+h2{font-size:1.5rem;font-weight:800}
+h3{font-size:1.08rem;font-weight:800}
+p{margin:.4em 0}
+a{color:var(--cobre)}
+button,input,select,textarea{font:inherit;color:inherit}
+button{cursor:pointer;background:var(--panel2);border:1px solid var(--line);border-radius:8px;padding:.45em .9em}
+button:hover{border-color:#3b4d57}
+button.prim{background:var(--cobre);color:#1a0f06;border-color:var(--cobre);font-weight:700}
+button.prim:disabled{opacity:.5;cursor:wait}
+button.ghost{background:transparent}
+button.mini{padding:.15em .5em;font-size:.85rem}
+input,select,textarea{background:#0f171b;border:1px solid var(--line);border-radius:7px;padding:.4em .55em;min-width:0}
+textarea{width:100%;font-family:ui-monospace,Menlo,Consolas,monospace;font-size:.85rem;line-height:1.45}
+input[type=number]{width:5.4em}
+input[type=checkbox]{accent-color:var(--ok);width:1.05em;height:1.05em}
+:focus-visible{outline:2px solid var(--cobre);outline-offset:2px}
+.muted{color:var(--muted)}
+.small{font-size:.86rem}
+.row{display:flex;gap:.6rem;align-items:center;flex-wrap:wrap}
+.grid2{display:grid;grid-template-columns:minmax(0,1fr) minmax(0,1fr);gap:1.2rem}
+@media (max-width:900px){.grid2{grid-template-columns:1fr}}
+.card{background:var(--panel);border:1px solid var(--line);border-radius:var(--r);padding:1rem 1.1rem}
+.card + .card{margin-top:1rem}
+
+/* topo */
+.top{display:flex;justify-content:space-between;align-items:center;gap:1rem;flex-wrap:wrap;padding:1rem 1.4rem .6rem}
+.brand{display:flex;gap:.8rem;align-items:center}
+.brand h1{font-size:2rem;font-weight:800;letter-spacing:-.02em}
+.brand h1 .o1{color:#ff5a4e}.brand h1 .o2{color:#4ea8ff}
+.brand p{margin:0;color:var(--muted);font-size:.9rem}
+.proj{display:flex;gap:.5rem;align-items:center;flex-wrap:wrap}
+#saveStatus{font-size:.82rem;color:var(--muted);min-width:7em}
+
+/* régua de etapas: um fio que passa pelos 4 pontos */
+.steps{position:relative;display:flex;gap:0;align-items:center;padding:.3rem 1.4rem 1rem;overflow-x:auto}
+.steps .wire{position:absolute;left:2.4rem;right:9rem;top:calc(.3rem + 1.05rem);height:2px;background:linear-gradient(90deg,var(--cobre),#4ea8ff);opacity:.5;z-index:0}
+.steps button.st{position:relative;z-index:1;background:var(--bg);border:none;display:flex;align-items:center;gap:.5rem;padding:.3rem .9rem .3rem .2rem;margin-right:1.2rem;white-space:nowrap;color:var(--muted)}
+.steps button.st svg{flex:none}
+.steps button.st[aria-current=true]{color:var(--text);font-weight:700}
+.steps button.st[aria-current=true] .pad{fill:var(--cobre)}
+.steps .spacer{flex:1}
+#chatBtn{z-index:1;white-space:nowrap}
+
+main{padding:0 1.4rem 4rem;max-width:1400px;margin:0 auto}
+.step[hidden]{display:none}
+.lede{max-width:70ch;color:var(--muted);margin:.2rem 0 1rem}
+
+/* componentes */
+.comp{border:1px solid var(--line);border-radius:9px;padding:.6rem .7rem;background:var(--panel2)}
+.comp + .comp{margin-top:.6rem}
+.comp .head{display:flex;gap:.5rem;align-items:center}
+.comp .head input.nome{flex:1;font-weight:700}
+.comp .dims{display:flex;gap:.4rem;align-items:center;flex-wrap:wrap;margin-top:.45rem;font-size:.9rem}
+.comp details{margin-top:.4rem;font-size:.9rem}
+.comp details summary{cursor:pointer;color:var(--muted)}
+.comp .adv{display:grid;gap:.4rem;margin-top:.4rem}
+.tag{display:inline-block;font-size:.75rem;padding:.05em .5em;border-radius:99px;border:1px solid var(--line);color:var(--muted)}
+.tag.placa{border-color:var(--cobre);color:var(--cobre)}
+.approx{color:var(--warn);font-size:.8rem}
+
+.drop{border:1.5px dashed #3a4c56;border-radius:10px;padding:1rem;text-align:center;color:var(--muted)}
+.drop.over{border-color:var(--cobre);color:var(--text)}
+.thumbs{display:flex;gap:.5rem;flex-wrap:wrap;margin-top:.6rem}
+.thumbs figure{margin:0;position:relative}
+.thumbs img{width:110px;height:110px;object-fit:cover;border-radius:8px;border:1px solid var(--line);display:block}
+.thumbs button{position:absolute;top:4px;right:4px;padding:0 .4em;font-size:.8rem}
+.chips{display:flex;gap:.35rem;flex-wrap:wrap}
+.chip{font-family:ui-monospace,Menlo,monospace;font-size:.8rem;background:#0f171b;border:1px solid var(--line);border-radius:6px;padding:.1em .45em}
+
+.ai-out ul{margin:.3rem 0 .6rem 1.1rem;padding:0}
+.ai-out li{margin:.2rem 0}
+.alert{border-left:3px solid var(--warn);background:#2a2214;padding:.5rem .7rem;border-radius:0 8px 8px 0;margin:.4rem 0}
+.alert.err{border-color:var(--err);background:#2b1715}
+.progress{font-size:.85rem;color:var(--muted);white-space:pre-wrap;max-height:7em;overflow:auto}
+
+/* nós */
+.legend{display:flex;gap:1.2rem;flex-wrap:wrap;align-items:center;margin:.3rem 0 .8rem}
+.legend span{display:flex;gap:.4rem;align-items:center}
+#diagramWrap{overflow:auto;background:#0e161a;border:1px solid var(--line);border-radius:var(--r)}
+#diagram{display:block;min-width:760px}
+#diagram text{font-family:ui-monospace,Menlo,monospace;font-size:12px}
+#diagram .net{transition:opacity .15s}
+#diagram.focus .net{opacity:.12}
+#diagram.focus .net.on{opacity:1}
+#diagram.focus .pinlbl{opacity:.35}
+#diagram.focus .pinlbl.on{opacity:1;font-weight:700}
+.nettable{width:100%;border-collapse:collapse;font-size:.92rem}
+.nettable td,.nettable th{border-bottom:1px solid var(--line);padding:.45rem .4rem;vertical-align:top;text-align:left}
+.nettable th{color:var(--muted);font-weight:400;font-size:.82rem}
+.nettable tr.on td{background:#18252c}
+.nettable input.nm{width:7.5em;font-weight:700}
+.pt{display:inline-flex;gap:.25rem;align-items:center;margin:.1rem .25rem .1rem 0;font-family:ui-monospace,Menlo,monospace;font-size:.8rem;background:#0f171b;border:1px solid var(--line);border-radius:6px;padding:.05em .1em .05em .45em}
+.pt button{border:none;background:none;padding:0 .3em;color:var(--muted)}
+.addpt{display:inline-flex;gap:.25rem;margin-top:.25rem}
+.addpt select,.addpt input{font-size:.8rem;padding:.2em .35em}
+.addpt input{width:6.5em}
+
+/* ligar */
+.seg{display:inline-flex;border:1px solid var(--line);border-radius:9px;overflow:hidden}
+.seg button{border:none;border-radius:0;background:transparent;padding:.45em 1em}
+.seg button[aria-pressed=true]{background:var(--cobre);color:#1a0f06;font-weight:700}
+.netcards{display:grid;grid-template-columns:repeat(auto-fill,minmax(320px,1fr));gap:1rem;margin-top:1rem}
+.netcard{background:var(--panel);border:1px solid var(--line);border-radius:var(--r);padding:.9rem 1rem;border-top:4px solid var(--c)}
+.netcard h3{display:flex;gap:.5rem;align-items:center}
+.netcard ol{margin:.5rem 0 0 1.1rem;padding:0}
+.netcard li{margin:.3rem 0}
+.tree{margin:.5rem 0 .2rem}
+.pin{font-family:ui-monospace,Menlo,monospace;font-size:.88em;background:#0f171b;border-radius:5px;padding:0 .3em;white-space:nowrap}
+details.learn{background:var(--panel);border:1px solid var(--line);border-radius:var(--r);padding:.8rem 1rem;margin-top:1rem}
+details.learn summary{cursor:pointer;font-weight:700;font-family:"Bricolage Grotesque",sans-serif}
+details.learn li{margin:.25rem 0}
+.checklist label{display:flex;gap:.5rem;align-items:flex-start;margin:.3rem 0}
+
+/* case */
+.layouts{display:grid;grid-template-columns:repeat(3,1fr);gap:.6rem}
+@media (max-width:600px){.layouts{grid-template-columns:1fr}}
+.layouts button{text-align:left;padding:.6rem;display:grid;gap:.3rem;background:var(--panel2)}
+.layouts button[aria-pressed=true]{border-color:var(--cobre);box-shadow:0 0 0 1px var(--cobre) inset}
+.layouts small{color:var(--muted)}
+.params{display:grid;grid-template-columns:repeat(auto-fill,minmax(190px,1fr));gap:.5rem .9rem;margin-top:.8rem;font-size:.9rem}
+.params label{display:flex;justify-content:space-between;gap:.5rem;align-items:center}
+.params label span{color:var(--muted)}
+#view{position:relative;height:460px;background:radial-gradient(ellipse at 50% 40%,#1a262c,#0c1215 70%);border:1px solid var(--line);border-radius:var(--r);overflow:hidden}
+#view canvas{display:block;width:100%;height:100%}
+#viewMsg{position:absolute;inset:auto 0 0 0;padding:.5rem .8rem;font-size:.82rem;color:var(--muted)}
+.dimsout{font-family:"Bricolage Grotesque",sans-serif;font-size:1.6rem;font-weight:800}
+.order li{display:flex;gap:.4rem;align-items:center;margin:.25rem 0}
+.order{list-style:none;padding:0;margin:.4rem 0}
+.order .nm{flex:1}
+
+/* chat */
+#chat{position:fixed;right:0;top:0;bottom:0;width:min(440px,100vw);background:var(--panel);border-left:1px solid var(--line);display:flex;flex-direction:column;z-index:20;box-shadow:-20px 0 40px #0008}
+#chat[hidden]{display:none}
+#chat header{display:flex;justify-content:space-between;align-items:center;padding:.8rem 1rem;border-bottom:1px solid var(--line)}
+#chatLog{flex:1;overflow:auto;padding:1rem;display:flex;flex-direction:column;gap:.7rem}
+.msg{padding:.6rem .8rem;border-radius:10px;max-width:92%;font-size:.94rem}
+.msg.u{align-self:flex-end;background:#2b2118;border:1px solid #4b3524}
+.msg.a{align-self:flex-start;background:var(--panel2);border:1px solid var(--line)}
+.msg ul{margin:.3rem 0 .3rem 1.1rem;padding:0}
+#chatForm{display:flex;gap:.5rem;padding:.8rem;border-top:1px solid var(--line)}
+#chatForm textarea{font-family:inherit;font-size:.95rem;resize:none}
+.empty{padding:2rem;text-align:center;color:var(--muted);border:1.5px dashed var(--line);border-radius:var(--r)}
+/* material e peças */
+.matlist{display:grid;grid-template-columns:repeat(auto-fill,minmax(210px,1fr));gap:.15rem .8rem;margin-top:.5rem;font-size:.92rem}
+.matlist label{display:flex;gap:.45rem;align-items:center}
+.matlist .x{border:none;background:none;color:var(--muted);padding:0 .3em}
+.mypart{display:inline-flex;align-items:center;gap:.2rem}
+.mypart button{border:none;background:none;color:var(--muted);padding:0 .3em}
+.pinrow{width:100%;font-family:ui-monospace,Menlo,monospace;font-size:.8rem}
+
+/* placa perfurada */
+.perfgrid{display:grid;grid-template-columns:minmax(0,1.55fr) minmax(300px,1fr);gap:1rem;margin-top:.8rem}
+@media (max-width:1000px){.perfgrid{grid-template-columns:1fr}}
+.perfwrap{overflow:auto;background:#0e161a;border:1px solid var(--line);border-radius:var(--r);padding:.6rem}
+#perfSvg{display:block}
+#perfSvg text{font-family:ui-monospace,Menlo,monospace;font-size:10px}
+#perfSvg .hole{cursor:crosshair}
+#perfSvg .part{cursor:grab}
+.tray{list-style:none;margin:.4rem 0;padding:0}
+.tray li{display:flex;gap:.35rem;align-items:center;flex-wrap:wrap;padding:.4rem .5rem;border:1px solid var(--line);border-radius:8px;margin:.35rem 0;background:var(--panel2)}
+.tray li.sel{border-color:var(--cobre);box-shadow:0 0 0 1px var(--cobre) inset}
+.tray li .nm{flex:1;min-width:9em}
+.tray li.bad{border-color:var(--err)}
+.runs{margin:.3rem 0 .2rem 1.1rem;padding:0;font-size:.92rem}
+.runs li{margin:.2rem 0}
+.perfnet{border-left:4px solid var(--c);padding:.2rem 0 .2rem .7rem;margin:.7rem 0}
+@media (prefers-reduced-motion:reduce){*{transition:none!important;animation:none!important}}
+</style>
+</head>
+<body>
+
+<header class="top">
+  <div class="brand">
+    <svg width="54" height="40" viewBox="0 0 54 40" aria-hidden="true">
+      <path d="M6 20 H48 M27 20 V6 M27 20 V34" stroke="#e8a066" stroke-width="2" fill="none"/>
+      <circle cx="6" cy="20" r="5" fill="#ff5a4e"/>
+      <rect x="22" y="1" width="10" height="10" fill="#c3ccd1"/>
+      <path d="M27 29 l5 5 -5 5 -5 -5z" fill="#ffd23f"/>
+      <path d="M48 15 l5 5 -5 5 -5 -5z" fill="#4ea8ff"/>
+      <circle cx="27" cy="20" r="3.2" fill="#e8a066"/>
+    </svg>
+    <div><h1>n<span class="o1">ó</span> a n<span class="o2">ó</span></h1><p>do emaranhado de jumpers ao case impresso</p></div>
+  </div>
+  <div class="proj">
+    <label class="small muted" for="projSel">Projeto</label>
+    <select id="projSel"></select>
+    <button id="novoProj">+ novo</button>
+    <button id="renProj" class="ghost">renomear</button>
+    <button id="delProj" class="ghost">apagar</button>
+    <span id="saveStatus" aria-live="polite"></span>
+  </div>
+</header>
+
+<nav class="steps" aria-label="Etapas">
+  <div class="wire" aria-hidden="true"></div>
+  <button class="st" data-step="1"><svg width="22" height="22" viewBox="0 0 22 22"><rect class="pad" x="3" y="3" width="16" height="16" rx="3" fill="#2b3a42"/><text x="11" y="15.5" text-anchor="middle" font-size="11" fill="#0c1215" font-weight="700">1</text></svg>Montagem</button>
+  <button class="st" data-step="2"><svg width="22" height="22" viewBox="0 0 22 22"><rect class="pad" x="3" y="3" width="16" height="16" rx="3" fill="#2b3a42"/><text x="11" y="15.5" text-anchor="middle" font-size="11" fill="#0c1215" font-weight="700">2</text></svg>Nós</button>
+  <button class="st" data-step="3"><svg width="22" height="22" viewBox="0 0 22 22"><rect class="pad" x="3" y="3" width="16" height="16" rx="3" fill="#2b3a42"/><text x="11" y="15.5" text-anchor="middle" font-size="11" fill="#0c1215" font-weight="700">3</text></svg>Ligar</button>
+  <button class="st" data-step="4"><svg width="22" height="22" viewBox="0 0 22 22"><rect class="pad" x="3" y="3" width="16" height="16" rx="3" fill="#2b3a42"/><text x="11" y="15.5" text-anchor="middle" font-size="11" fill="#0c1215" font-weight="700">4</text></svg>Case 3D</button>
+  <div class="spacer"></div>
+  <button id="chatBtn">💬 Perguntar sobre a montagem</button>
+</nav>
+
+<main>
+  <!-- 1 MONTAGEM -->
+  <section id="s1" class="step">
+    <h2>O que você montou</h2>
+    <p class="lede">Escolha a placa e os módulos, cole o código e suba fotos da protoboard. O código é a fonte principal das ligações; as fotos servem para conferir. As medidas vêm aproximadas: meça a sua placa e corrija aqui, porque é delas que o case nasce.</p>
+    <div class="grid2">
+      <div>
+        <div class="card">
+          <div class="row" style="justify-content:space-between"><h3>Peças</h3>
+            <div class="row"><select id="presetSel" aria-label="Adicionar peça"></select><button id="addComp">adicionar</button></div>
+          </div>
+          <div id="compList" style="margin-top:.8rem"></div>
+        </div>
+        <div class="card">
+          <h3>Meu material</h3>
+          <p class="small muted">O que você tem em casa. Vale para todos os projetos: a IA e o passo a passo sugerem com base nisso.</p>
+          <div id="matList" class="matlist"></div>
+          <form id="matForm" class="row" style="margin-top:.5rem"><input id="matIn" placeholder="ex.: placa perfurada 3×7 cm, fio esmaltado…" style="flex:1"><button>adicionar</button></form>
+          <h3 style="margin-top:1rem">Minhas peças</h3>
+          <p class="small muted">Peças que você cadastrou (medidas e pinagem suas). Para criar: adicione uma peça, ajuste e clique em “salvar em Minhas peças”.</p>
+          <div id="myParts" class="chips" style="margin-top:.4rem"></div>
+        </div>
+      </div>
+      <div>
+        <div class="card">
+          <h3>Código</h3>
+          <p class="small muted">Cole o .ino (e o User_Setup.h, se usar TFT_eSPI), ou envie o arquivo.</p>
+          <textarea id="code" rows="12" spellcheck="false" placeholder="// cole seu código aqui"></textarea>
+          <div class="row" style="margin-top:.4rem;justify-content:space-between">
+            <label class="small"><input type="file" id="codeFile" accept=".ino,.cpp,.h,.c,.txt,.py" multiple> enviar arquivo(s)</label>
+          </div>
+          <div id="pinsFound" class="small" style="margin-top:.5rem"></div>
+        </div>
+        <div class="card">
+          <h3>Fotos da montagem</h3>
+          <div class="drop" id="drop">Arraste fotos aqui ou <label style="color:var(--cobre);cursor:pointer;text-decoration:underline"><input type="file" id="photoFile" accept="image/*" multiple hidden>escolha</label>.<br><span class="small">Dica: uma foto de cima, com luz boa, e outra de perto mostrando onde cada fio entra.</span></div>
+          <div class="thumbs" id="thumbs"></div>
+        </div>
+        <div class="card">
+          <div class="row" style="justify-content:space-between">
+            <h3>Analisar com a IA</h3>
+            <button class="prim" id="analisar">Descobrir as ligações</button>
+          </div>
+          <p class="small muted">A IA lê código, peças e fotos e devolve os nós, alertas e passo a passo. Tudo vira editável na etapa 2.</p>
+          <div id="aiProgress" class="progress"></div>
+          <div id="aiOut" class="ai-out"></div>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- 2 NÓS -->
+  <section id="s2" class="step" hidden>
+    <h2>Mapa de nós</h2>
+    <p class="lede">Um <b>nó</b> é um fio só, mesmo quando chega em vários pinos. Na protoboard é a fileira que une tudo; na solda ou no case, é você. Cada nó ganha uma forma pelo tipo e uma cor de fio sugerida. Passe o mouse (ou toque) num nó: todos os pinos dele acendem. Se acenderam juntos, é a mesma ligação.</p>
+    <div class="legend small">
+      <span><svg width="16" height="16"><circle cx="8" cy="8" r="6" fill="#ff5a4e"/></svg>energia (3V3, 5V)</span>
+      <span><svg width="16" height="16"><rect x="2" y="2" width="12" height="12" fill="#c3ccd1"/></svg>terra (GND) · desenhado claro, fio preto</span>
+      <span><svg width="16" height="16"><path d="M8 1l7 7-7 7-7-7z" fill="#ffd23f"/></svg>sinal (dados, SPI, I²C, GPIO)</span>
+      <span><svg width="22" height="16"><circle cx="11" cy="8" r="6" fill="none" stroke="#e8a066" stroke-width="2"/><text x="11" y="11.5" font-size="8" text-anchor="middle" fill="#e8a066">3</text></svg>ponto de divisão: o nó vai para 3+ lugares</span>
+    </div>
+    <div id="diagramWrap"><svg id="diagram"></svg></div>
+    <div class="card" style="margin-top:1rem">
+      <div class="row" style="justify-content:space-between"><h3>Nós (editáveis)</h3><button id="addNet">+ nó</button></div>
+      <p class="small muted">Confira cada nó com o seu circuito antes de soldar ou cortar fio, e marque “conferido”.</p>
+      <div style="overflow:auto"><table class="nettable" id="netTable"></table></div>
+    </div>
+  </section>
+
+  <!-- 3 LIGAR -->
+  <section id="s3" class="step" hidden>
+    <div class="row" style="justify-content:space-between">
+      <h2>Ligar, nó a nó</h2>
+      <div class="seg" role="group" aria-label="Modo"><button data-mode="sem" aria-pressed="true">Sem solda (jumpers)</button><button data-mode="com" aria-pressed="false">Fios soldados</button><button data-mode="pcb" aria-pressed="false">Na placa perfurada</button></div>
+    </div>
+    <p class="lede" id="ligarLede"></p>
+    <div id="ligarAI"></div>
+    <div class="netcards" id="netCards"></div>
+    <div id="perfBox" hidden></div>
+    <div class="grid2" style="margin-top:1rem">
+      <details class="learn" open>
+        <summary>Teste de continuidade (antes de ligar na USB)</summary>
+        <p class="small muted">Multímetro no modo bipe. Encoste uma ponta em cada pino.</p>
+        <div class="checklist" id="contList"></div>
+      </details>
+      <details class="learn" id="learnBox"></details>
+    </div>
+  </section>
+
+  <!-- 4 CASE -->
+  <section id="s4" class="step" hidden>
+    <h2>Case sob medida</h2>
+    <p class="lede">O case é calculado a partir das medidas das peças na etapa 1. Se a placa real for maior, mude ali e a caixa acompanha. Antes do case inteiro, imprima o <b>gabarito de teste</b> (só fundo e guias, uns 10 minutos) e veja se tudo encaixa.</p>
+    <div class="grid2">
+      <div>
+        <div class="card">
+          <h3>Disposição</h3>
+          <div class="layouts" id="layouts" style="margin-top:.6rem">
+            <button data-modo="linha"><svg width="90" height="34"><rect x="2" y="8" width="38" height="18" fill="#2a3b44" stroke="#e8a066"/><rect x="48" y="6" width="22" height="22" fill="#2a3b44" stroke="#4ea8ff"/><rect x="76" y="11" width="12" height="12" fill="#2a3b44" stroke="#ffd23f"/></svg><b>Lado a lado</b><small>como o case de acrílico: placas planas, fios em feixe, sem solda</small></button>
+            <button data-modo="coluna"><svg width="90" height="34"><rect x="25" y="1" width="40" height="13" fill="#2a3b44" stroke="#e8a066"/><rect x="31" y="18" width="28" height="15" fill="#2a3b44" stroke="#4ea8ff"/></svg><b>Em coluna</b><small>mais estreito e comprido, bom para segurar na mão</small></button>
+            <button data-modo="empilhado"><svg width="90" height="34"><rect x="20" y="22" width="50" height="9" fill="#2a3b44" stroke="#e8a066"/><rect x="24" y="6" width="42" height="9" fill="#2a3b44" stroke="#4ea8ff"/><path d="M30 15v7M60 15v7" stroke="#9aabb3"/></svg><b>Sanduíche</b><small>tela em cima, ESP embaixo: menor área, mais alto</small></button>
+          </div>
+          <h3 style="margin-top:1rem">Ordem e giro</h3>
+          <ol class="order" id="orderList"></ol>
+          <div class="params" id="params"></div>
+        </div>
+      </div>
+      <div>
+        <div id="view"><div id="viewMsg">carregando visualização 3D…</div></div>
+        <div class="row" style="margin-top:.6rem;justify-content:space-between">
+          <div><div class="dimsout" id="dimsOut">—</div><div class="small muted">medida externa (C × L × A), sem tampa</div></div>
+          <div class="row">
+            <label class="small"><input type="checkbox" id="xray" checked> ver dentro</label>
+            <label class="small">abrir tampa <input type="range" id="explode" min="0" max="60" value="25"></label>
+          </div>
+        </div>
+        <div class="card" style="margin-top:.8rem">
+          <h3>Baixar para imprimir (.stl)</h3>
+          <div class="row" style="margin-top:.5rem">
+            <button class="prim" data-stl="gabarito">Gabarito de teste</button>
+            <button data-stl="base">Base</button>
+            <button data-stl="tampa">Tampa</button>
+          </div>
+          <p class="small muted" id="stlMsg">A tampa já vem virada para imprimir (face de cima na mesa). Material sugerido: PLA, 0,2 mm, 3 paredes, sem suporte. Os furos de USB podem pedir suporte se ficarem altos.</p>
+          <div id="caseTips"></div>
+        </div>
+      </div>
+    </div>
+  </section>
+</main>
+
+<aside id="chat" hidden aria-label="Perguntar sobre a montagem">
+  <header><h3>Perguntar sobre a montagem</h3><button id="chatClose" class="ghost" aria-label="Fechar">✕</button></header>
+  <div id="chatLog"></div>
+  <form id="chatForm"><textarea id="chatIn" rows="2" placeholder="ex.: como soldo o GND em 3 lugares sem ficar volumoso?"></textarea><button class="prim">enviar</button></form>
+</aside>
+
+<script>
+/* ============ dados de referência ============ */
+const PALETTE=[
+ {k:'vermelho',hex:'#ff5a4e'},{k:'preto',hex:'#c3ccd1'},{k:'amarelo',hex:'#ffd23f'},{k:'verde',hex:'#3ddc97'},
+ {k:'azul',hex:'#4ea8ff'},{k:'roxo',hex:'#b38cff'},{k:'laranja',hex:'#ff9f43'},{k:'marrom',hex:'#c8895a'},
+ {k:'rosa',hex:'#ff7eb6'},{k:'ciano',hex:'#7ee0ff'},{k:'branco',hex:'#f4f4f4'},{k:'cinza',hex:'#8a979e'}];
+const SIGCYCLE=['amarelo','verde','azul','roxo','laranja','marrom','rosa','ciano','branco','cinza'];
+const hexOf=k=>(PALETTE.find(p=>p.k===k)||PALETTE[2]).hex;
+
+/* medidas aproximadas: sempre conferir com paquímetro */
+/* fp = pinagem física: r1 e r2 são as duas fileiras, na ordem da ponta da antena para a ponta da USB; gap = distância entre fileiras em furos (2,54 mm). Conferir com a serigrafia da placa. */
+const PRESETS={
+ 'esp32s3-devkitc':{nome:'ESP32-S3 DevKitC-1 (2× USB-C)',papel:'placa',L:69,W:26,H:14,pinos:[],lateral:{lado:'esquerda',w:24,h:7,z:9},
+   fp:{gap:10,r1:['3V3','3V3','RST/EN','GPIO4','GPIO5','GPIO6','GPIO7','GPIO15','GPIO16','GPIO17','GPIO18','GPIO8','GPIO3','GPIO46','GPIO9','GPIO10','GPIO11','GPIO12','GPIO13','GPIO14','5V','GND'],
+              r2:['GND','GPIO43/TX','GPIO44/RX','GPIO1','GPIO2','GPIO42','GPIO41','GPIO40','GPIO39','GPIO38','GPIO37','GPIO36','GPIO35','GPIO0','GPIO45','GPIO48','GPIO47','GPIO21','GPIO20','GPIO19','GND','GND']}},
+ 'esp32-devkit30':{nome:'ESP32 DevKit V1 (30 pinos)',papel:'placa',L:52,W:28.5,H:13,pinos:[],lateral:{lado:'esquerda',w:10,h:6,z:8},
+   fp:{gap:10,r1:['RST/EN','GPIO36/VP','GPIO39/VN','GPIO34','GPIO35','GPIO32','GPIO33','GPIO25','GPIO26','GPIO27','GPIO14','GPIO12','GPIO13','GND','VIN/5V'],
+              r2:['GPIO23','GPIO22','GPIO1/TX','GPIO3/RX','GPIO21','GPIO19','GPIO18','GPIO5','GPIO17','GPIO16','GPIO4','GPIO2','GPIO15','GND','3V3']}},
+ 'esp32-devkit38':{nome:'ESP32 DevKitC (38 pinos)',papel:'placa',L:55,W:28,H:13,pinos:[],lateral:{lado:'esquerda',w:10,h:6,z:8},fp:{gap:10,r1:[],r2:[]}},
+ 'esp32c3-supermini':{nome:'ESP32-C3 SuperMini',papel:'placa',L:22.5,W:18,H:5,pinos:[],lateral:{lado:'esquerda',w:10,h:4.5,z:3},
+   fp:{gap:6,r1:['5V','GND','3V3','GPIO4','GPIO3','GPIO2','GPIO1','GPIO0'],r2:['GPIO5','GPIO6','GPIO7','GPIO8','GPIO9','GPIO10','GPIO20/RX','GPIO21/TX']}},
+ 'esp32s3-zero':{nome:'ESP32-S3 Zero',papel:'placa',L:23.5,W:18,H:5,pinos:[],lateral:{lado:'esquerda',w:10,h:4.5,z:3},fp:{gap:6,r1:[],r2:[]}},
+ 'd1mini':{nome:'Wemos D1 mini (ESP8266)',papel:'placa',L:34.2,W:25.6,H:8,pinos:[],lateral:{lado:'esquerda',w:9,h:5,z:4},
+   fp:{gap:9,r1:['RST','A0','GPIO16/D0','GPIO14/D5','GPIO12/D6','GPIO13/D7','GPIO15/D8','3V3'],r2:['GPIO1/TX','GPIO3/RX','GPIO5/D1','GPIO4/D2','GPIO0/D3','GPIO2/D4','GND','5V']}},
+ 'perf7x5':{nome:'Placa perfurada 7×5 cm',papel:'pcb',L:70,W:50,H:1.6,pinos:[],cols:24,rows:18},
+ 'perf4x6':{nome:'Placa perfurada 4×6 cm',papel:'pcb',L:60,W:40,H:1.6,pinos:[],cols:20,rows:14},
+ 'tft18':{nome:'TFT 1,8" SPI ST7735 (128×160)',papel:'modulo',L:34,W:56,H:8,pinos:['GND','VCC','SCL','SDA','RES','DC','CS','BL'],janela:{w:29,h:37,dx:0,dy:2}},
+ 'tft144':{nome:'TFT 1,44" SPI (128×128)',papel:'modulo',L:32,W:39,H:8,pinos:['GND','VCC','SCL','SDA','RES','DC','CS','BL'],janela:{w:27,h:27,dx:0,dy:2}},
+ 'st7789-154':{nome:'TFT 1,54" ST7789 (240×240)',papel:'modulo',L:31,W:41,H:8,pinos:['GND','VCC','SCL','SDA','RES','DC','CS','BLK'],janela:{w:28,h:28,dx:0,dy:2}},
+ 'oled096':{nome:'OLED 0,96" I²C (SSD1306)',papel:'modulo',L:27,W:27.5,H:5,pinos:['GND','VCC','SCL','SDA'],janela:{w:25,h:14,dx:0,dy:-2}},
+ 'bme280':{nome:'BME280 / BMP280 (I²C)',papel:'modulo',L:15,W:12,H:3,pinos:['VIN','GND','SCL','SDA']},
+ 'mpu6050':{nome:'MPU-6050 (GY-521)',papel:'modulo',L:21,W:16,H:3,pinos:['VCC','GND','SCL','SDA','XDA','XCL','AD0','INT']},
+ 'botao12':{nome:'Botão tátil 12×12',papel:'modulo',L:12,W:12,H:8,pinos:['A','B'],janela:{w:12.6,h:12.6,dx:0,dy:0}},
+ 'led5':{nome:'LED 5 mm',papel:'modulo',L:6,W:6,H:9,pinos:['+ (ânodo)','− (cátodo)'],janela:{w:5.3,h:5.3,dx:0,dy:0}},
+ 'buzzer':{nome:'Buzzer 12 mm',papel:'modulo',L:12,W:12,H:9.5,pinos:['+','−']},
+ 'miniprotoboard':{nome:'Mini protoboard 170 furos (hub de nós)',papel:'modulo',L:47,W:35,H:9,pinos:['fileira A','fileira B','fileira C','fileira D']},
+ 'custom':{nome:'Peça personalizada',papel:'modulo',L:20,W:15,H:5,pinos:['P1','P2']}
+};
+const BOARD_PINS=['3V3','5V','VIN','GND','EN',...Array.from({length:49},(_,i)=>'GPIO'+i)];
+const DEFAULT_CASE={modo:'linha',parede:2,folga:0.5,canal:8,margem:3,espacoFios:12,guia:4,tampa:2,labio:3};
+
+/* ============ utilidades ============ */
+const $=s=>document.querySelector(s);
+const esc=s=>String(s??'').replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
+const uid=()=>Math.random().toString(36).slice(2,9);
+const num=(v,d=0)=>{const n=parseFloat(String(v).replace(',','.'));return isFinite(n)?n:d};
+const fmt=v=>(Math.round(v*10)/10).toString().replace('.',',');
+function shapeSVG(tipo,x,y,r,fill,extra=''){
+  if(tipo==='energia')return `<circle cx="${x}" cy="${y}" r="${r}" fill="${fill}" ${extra}/>`;
+  if(tipo==='terra')return `<rect x="${x-r*.85}" y="${y-r*.85}" width="${r*1.7}" height="${r*1.7}" fill="${fill}" ${extra}/>`;
+  return `<path d="M${x} ${y-r*1.1}l${r*1.1} ${r*1.1}-${r*1.1} ${r*1.1}-${r*1.1}-${r*1.1}z" fill="${fill}" ${extra}/>`;
+}
+const shapeIcon=(tipo,hex,s=16)=>`<svg width="${s}" height="${s}" viewBox="0 0 16 16" aria-hidden="true">${shapeSVG(tipo,8,8,6,hex)}</svg>`;
+function guessTipo(name){const n=String(name).toUpperCase();if(/GND|TERRA|−|CATODO|CÁTODO/.test(n))return 'terra';if(/3V3|3\.3|5V|VCC|VIN|VDD|\+5|\+3/.test(n))return 'energia';return 'sinal'}
+
+/* ============ armazenamento ============ */
+const store={mode:'local',DB:null,UID:null};
+function docData(d){if(!d)return null;if(typeof d.data==='function'){if(d.exists===false)return null;return d.data()}if(d.data&&typeof d.data==='object')return d.data;return d}
+function docsOf(s){if(!s)return[];if(Array.isArray(s))return s;if(Array.isArray(s.docs))return s.docs;if(Array.isArray(s.items))return s.items;return[]}
+const LKEY='noano:v1';
+function lget(){try{return JSON.parse(localStorage.getItem(LKEY)||'{}')}catch(e){return{}}}
+function lset(o){try{localStorage.setItem(LKEY,JSON.stringify(o));return true}catch(e){return false}}
+async function initStore(){
+  try{
+    if(!window.claude||!claude.use)return;
+    const [db,user]=await Promise.all([claude.use('db'),claude.use('user')]);
+    if(db&&user){const id=await user.id();if(id){store.DB=db;store.UID=id;store.mode='db'}}
+  }catch(e){console.warn('db indisponível',e)}
+}
+const col=n=>store.DB.collection(`data/users/${store.UID}/${n}`);
+async function listProjects(){
+  if(store.mode==='db'){const s=await col('projetos').get();return docsOf(s).map(d=>docData(d)).filter(Boolean).map(d=>({id:d.id,nome:d.nome,criado:d.criado}))}
+  const o=lget();return Object.values(o.projetos||{}).map(d=>({id:d.id,nome:d.nome,criado:d.criado}));
+}
+async function loadProject(id){
+  if(store.mode==='db'){
+    const d=docData(await col('projetos').doc(id).get());if(!d)return null;
+    d.fotos=[];
+    for(const fid of (d.fotoIds||[])){try{const f=docData(await col('fotos').doc(fid).get());if(f)d.fotos.push({id:fid,data:f.data})}catch(e){}}
+    return normalize(d);
+  }
+  const o=lget();return o.projetos&&o.projetos[id]?normalize(o.projetos[id]):null;
+}
+async function saveProject(p){
+  const copy=JSON.parse(JSON.stringify(p));copy.fotoIds=(p.fotos||[]).map(f=>f.id);
+  if(store.mode==='db'){delete copy.fotos;await col('projetos').doc(p.id).set(copy);return}
+  const o=lget();o.projetos=o.projetos||{};o.projetos[p.id]=copy;if(!lset(o)){copy.fotos=[];o.projetos[p.id]=copy;lset(o);throw new Error('sem espaço para fotos')}
+}
+async function savePhoto(f){if(store.mode==='db')await col('fotos').doc(f.id).set({id:f.id,data:f.data})}
+async function deletePhoto(id){if(store.mode==='db'){try{await col('fotos').doc(id).delete()}catch(e){}}}
+async function deleteProject(p){
+  if(store.mode==='db'){for(const f of p.fotos||[])await deletePhoto(f.id);await col('projetos').doc(p.id).delete();return}
+  const o=lget();if(o.projetos)delete o.projetos[p.id];lset(o);
+}
+async function loadLibrary(){
+  try{
+    if(store.mode==='db'){
+      docsOf(await col('pecas').get()).map(docData).filter(Boolean).forEach(d=>{if(d.key&&d.def)MYPARTS[d.key]=d.def});
+      const m=docData(await col('perfil').doc('material').get());if(m)MAT={tenho:m.tenho||{},extras:m.extras||[]};
+    }else{const o=lget();MYPARTS=o.pecas||{};if(o.material)MAT=o.material}
+  }catch(e){console.warn(e)}
+}
+async function saveMyPart(key,def){MYPARTS[key]=def;if(store.mode==='db')await col('pecas').doc(key).set({key,def});else{const o=lget();o.pecas=MYPARTS;lset(o)}}
+async function deleteMyPart(key){delete MYPARTS[key];if(store.mode==='db'){try{await col('pecas').doc(key).delete()}catch(e){}}else{const o=lget();o.pecas=MYPARTS;lset(o)}}
+let matTimer=null;
+function saveMat(){clearTimeout(matTimer);matTimer=setTimeout(async()=>{try{if(store.mode==='db')await col('perfil').doc('material').set(MAT);else{const o=lget();o.material=MAT;lset(o)}}catch(e){console.warn(e)}},600)}
+function normalize(p){
+  p.perf=p.perf||null;
+  p.comps=p.comps||[];p.nos=p.nos||[];p.fotos=p.fotos||[];p.caseCfg={...DEFAULT_CASE,...(p.caseCfg||{})};p.chat=p.chat||[];p.checks=p.checks||{};p.codigo=p.codigo||'';
+  return p;
+}
+
+/* ============ estado ============ */
+let P=null, projList=[], step=1, ligarModo='sem', focusNet=null;
+function compFromPreset(key){
+  const mine=key.startsWith('my:');const pr=mine?MYPARTS[key.slice(3)]:PRESETS[key];if(!pr)return compFromPreset('custom');
+  const cl=o=>o?JSON.parse(JSON.stringify(o)):null;
+  return{id:'c'+uid(),tipo:key,nome:pr.nome,papel:pr.papel,L:pr.L,W:pr.W,H:pr.H,pinos:[...(pr.pinos||[])],janela:cl(pr.janela),lateral:cl(pr.lateral),fp:cl(pr.fp),cols:pr.cols,rows:pr.rows,rot:false,incluir:true,aprox:!mine&&key!=='custom'}
+}
+let MYPARTS={};let MAT={tenho:{},extras:[]};
+const MAT_PADRAO=['Placa perfurada 7×5 cm','Placa perfurada 4×6 cm','Jumpers fêmea–fêmea','Jumpers macho–fêmea','Jumper em Y (1 para 2)','Barra de pinos macho','Barra de pinos fêmea','Fio rígido / cabinho (AWG 24)','Fio de wire-wrap (AWG 30)','Termo-retrátil','Mini protoboard','Ferro de solda e estanho','Multímetro','Parafusos M2'];
+const temMat=t=>!!MAT.tenho[t];
+function exampleProject(){
+  const p=normalize({id:'p'+uid(),nome:'Exemplo: ESP32-S3 + TFT 1,8"',criado:Date.now()});
+  const esp=compFromPreset('esp32s3-devkitc'),tft=compFromPreset('tft18');
+  p.comps=[esp,tft];
+  const pt=(c,pin)=>({c:c.id,p:pin});
+  p.nos=[
+    {id:'n'+uid(),nome:'3V3',tipo:'energia',cor:'vermelho',pontos:[pt(esp,'3V3'),pt(tft,'VCC'),pt(tft,'BL')],ok:false},
+    {id:'n'+uid(),nome:'GND',tipo:'terra',cor:'preto',pontos:[pt(esp,'GND'),pt(tft,'GND')],ok:false},
+    {id:'n'+uid(),nome:'SCK',tipo:'sinal',cor:'amarelo',pontos:[pt(esp,'GPIO12'),pt(tft,'SCL')],ok:false},
+    {id:'n'+uid(),nome:'MOSI',tipo:'sinal',cor:'verde',pontos:[pt(esp,'GPIO11'),pt(tft,'SDA')],ok:false},
+    {id:'n'+uid(),nome:'CS',tipo:'sinal',cor:'azul',pontos:[pt(esp,'GPIO10'),pt(tft,'CS')],ok:false},
+    {id:'n'+uid(),nome:'DC',tipo:'sinal',cor:'roxo',pontos:[pt(esp,'GPIO9'),pt(tft,'DC')],ok:false},
+    {id:'n'+uid(),nome:'RST',tipo:'sinal',cor:'laranja',pontos:[pt(esp,'GPIO8'),pt(tft,'RES')],ok:false},
+  ];
+  p.exemplo=true;
+  return p;
+}
+
+/* salvar com atraso */
+let saveTimer=null;
+function dirty(){
+  $('#saveStatus').textContent='alterado…';
+  clearTimeout(saveTimer);
+  saveTimer=setTimeout(async()=>{
+    try{await saveProject(P);$('#saveStatus').textContent=store.mode==='db'?'salvo ✓':'salvo neste navegador';}
+    catch(e){console.warn(e);$('#saveStatus').textContent='não salvou: '+(e.message||e.code||'erro')}
+  },1000);
+}
+
+/* ============ projetos ============ */
+async function refreshProjSel(){
+  projList=await listProjects().catch(()=>[]);
+  if(P&&!projList.find(x=>x.id===P.id))projList.push({id:P.id,nome:P.nome,criado:P.criado});
+  projList.sort((a,b)=>(b.criado||0)-(a.criado||0));
+  $('#projSel').innerHTML=projList.map(x=>`<option value="${x.id}" ${P&&x.id===P.id?'selected':''}>${esc(x.nome)}</option>`).join('');
+}
+async function openProject(id){
+  const p=await loadProject(id).catch(()=>null);
+  if(p){P=p;renderAll();await refreshProjSel();}
+}
+$('#projSel').onchange=e=>openProject(e.target.value);
+$('#novoProj').onclick=async()=>{
+  const nome=await askText('Nome do projeto','ex.: estação de clima');if(!nome)return;
+  P=normalize({id:'p'+uid(),nome,criado:Date.now()});P.comps=[compFromPreset('esp32s3-devkitc')];
+  await saveProject(P).catch(()=>{});await refreshProjSel();renderAll();go(1);
+};
+$('#renProj').onclick=async()=>{const nome=await askText('Novo nome',P.nome);if(!nome)return;P.nome=nome;dirty();await refreshProjSel();};
+$('#delProj').onclick=async()=>{
+  if(!await askConfirm(`Apagar “${P.nome}” e as fotos dele?`))return;
+  await deleteProject(P).catch(()=>{});
+  projList=await listProjects().catch(()=>[]);
+  if(projList.length)await openProject(projList[0].id);else{P=exampleProject();await saveProject(P).catch(()=>{});await refreshProjSel();renderAll()}
+};
+
+/* diálogos próprios (alert/prompt não funcionam aqui) */
+function dialog(html){return new Promise(res=>{
+  const d=document.createElement('div');
+  d.style.cssText='position:fixed;inset:0;background:#000a;display:grid;place-items:center;z-index:50';
+  d.innerHTML=`<form class="card" style="min-width:min(380px,90vw)">${html}<div class="row" style="justify-content:flex-end;margin-top:.8rem"><button type="button" data-x>cancelar</button><button class="prim">ok</button></div></form>`;
+  document.body.appendChild(d);const f=d.querySelector('form');const inp=f.querySelector('input');(inp||f.querySelector('.prim')).focus();
+  f.onsubmit=e=>{e.preventDefault();d.remove();res(inp?inp.value.trim():true)};
+  f.querySelector('[data-x]').onclick=()=>{d.remove();res(null)};
+})}
+const askText=(t,v='')=>dialog(`<h3>${esc(t)}</h3><input style="width:100%;margin-top:.6rem" value="${esc(v)}">`);
+const askConfirm=t=>dialog(`<h3>${esc(t)}</h3>`);
+
+/* ============ navegação ============ */
+document.querySelectorAll('.steps .st').forEach(b=>b.onclick=()=>go(+b.dataset.step));
+function go(n){
+  step=n;
+  document.querySelectorAll('.steps .st').forEach(b=>b.setAttribute('aria-current',+b.dataset.step===n));
+  [1,2,3,4].forEach(i=>$('#s'+i).hidden=i!==n);
+  if(n===2)renderNets();
+  if(n===3)renderLigar();
+  if(n===4)renderCase();
+  try{history.replaceState(null,'','#etapa-'+n)}catch(e){}
+}
+
+/* ============ ETAPA 1 ============ */
+function renderPresetSel(){
+  const grp=(label,list)=>list.length?`<optgroup label="${label}">${list.map(([k,v])=>`<option value="${k}">${esc(v.nome)}</option>`).join('')}</optgroup>`:'';
+  const E=Object.entries(PRESETS);
+  $('#presetSel').innerHTML=grp('Minhas peças',Object.entries(MYPARTS).map(([k,v])=>['my:'+k,v]))+grp('Placas ESP',E.filter(([k,v])=>v.papel==='placa'))+grp('Placa perfurada',E.filter(([k,v])=>v.papel==='pcb'))+grp('Módulos',E.filter(([k,v])=>v.papel==='modulo'));
+  $('#myParts').innerHTML=Object.keys(MYPARTS).length?Object.entries(MYPARTS).map(([k,v])=>`<span class="chip mypart">${esc(v.nome)} <span class="muted">${fmt(v.L)}×${fmt(v.W)}</span><button data-delmy="${esc(k)}" aria-label="apagar ${esc(v.nome)}">✕</button></span>`).join(''):'<span class="small muted">Nenhuma ainda.</span>';
+}
+$('#myParts').onclick=async e=>{const k=e.target.dataset.delmy;if(!k)return;if(!await askConfirm(`Apagar “${MYPARTS[k].nome}” de Minhas peças? (projetos que já usam continuam iguais)`))return;await deleteMyPart(k);renderPresetSel()};
+$('#addComp').onclick=()=>{const c=compFromPreset($('#presetSel').value);P.comps.push(c);if(c.papel==='pcb'&&!P.perf)P.perf={id:c.id,pos:{},view:'baixo'};renderComps();dirty()};
+function renderMat(){
+  const all=[...MAT_PADRAO,...MAT.extras];
+  $('#matList').innerHTML=all.map(t=>`<label><input type="checkbox" data-mat="${esc(t)}" ${MAT.tenho[t]?'checked':''}>${esc(t)}${MAT.extras.includes(t)?`<button type="button" class="x" data-delmat="${esc(t)}" aria-label="remover">✕</button>`:''}</label>`).join('');
+}
+$('#matList').addEventListener('change',e=>{const t=e.target.dataset.mat;if(t===undefined)return;MAT.tenho[t]=e.target.checked;saveMat()});
+$('#matList').addEventListener('click',e=>{const t=e.target.dataset.delmat;if(!t)return;e.preventDefault();MAT.extras=MAT.extras.filter(x=>x!==t);delete MAT.tenho[t];renderMat();saveMat()});
+$('#matForm').onsubmit=e=>{e.preventDefault();const t=$('#matIn').value.trim();if(!t)return;if(!MAT.extras.includes(t)&&!MAT_PADRAO.includes(t))MAT.extras.push(t);MAT.tenho[t]=true;$('#matIn').value='';renderMat();saveMat()};
+
+function renderComps(){
+  const el=$('#compList');
+  if(!P.comps.length){el.innerHTML='<div class="empty">Nenhuma peça ainda. Comece pela placa.</div>';return}
+  el.innerHTML=P.comps.map(c=>`
+  <div class="comp" data-id="${c.id}">
+    <div class="head"><span class="tag ${c.papel==='placa'?'placa':''}">${({placa:'placa',pcb:'placa perfurada'})[c.papel]||'módulo'}</span>
+      <input class="nome" data-f="nome" value="${esc(c.nome)}" aria-label="nome">
+      <button class="mini ghost" data-act="rm" aria-label="remover">✕</button></div>
+    <div class="dims">
+      <label>C <input type="number" step="0.1" data-f="L" value="${c.L}"></label>
+      <label>L <input type="number" step="0.1" data-f="W" value="${c.W}"></label>
+      <label>A <input type="number" step="0.1" data-f="H" value="${c.H}"></label> mm
+      ${c.aprox?'<span class="approx" title="Medida típica. Meça a sua.">≈ aproximado, meça a sua</span>':''}
+    </div>
+    ${c.papel==='pcb'?`<div class="dims"><label>furos: <input type="number" step="1" data-f="cols" value="${c.cols||24}"></label> × <input type="number" step="1" data-f="rows" value="${c.rows||18}" aria-label="linhas de furos"> <span class="small muted">(conte na sua placa)</span></div>
+      <div class="row" style="margin-top:.4rem"><button class="mini" data-act="save">salvar em Minhas peças</button></div>`:`
+    <details ${c.papel==='placa'&&c.fp&&!(c.fp.r1||[]).length?'open':''}><summary>${c.papel==='placa'?'pinagem física, furo da USB':'pinos, janela na tampa, furo lateral'}</summary>
+      <div class="adv">
+        ${c.papel==='placa'?`<span class="small muted">Pinagem física, para a placa perfurada: cada fileira em ordem, <b>da ponta da antena até a ponta da USB</b>. Confira com o que está escrito na sua placa. Use nomes como 3V3, 5V, GND, GPIO10; apelidos com barra (GPIO43/TX).</span>
+          <label>Fileira 1 <textarea class="pinrow" rows="2" data-f="fp.r1">${esc((c.fp?.r1||[]).join(', '))}</textarea></label>
+          <label>Fileira 2 <textarea class="pinrow" rows="2" data-f="fp.r2">${esc((c.fp?.r2||[]).join(', '))}</textarea></label>
+          <div class="row"><label>distância entre as fileiras <input type="number" step="1" data-f="fp.gap" value="${c.fp?.gap||10}"> furos</label>
+          <button class="mini" data-act="pinia">preencher com a IA (usa as fotos)</button></div>
+          <div class="small" data-pinmsg></div>`:`<label>Pinos (na ordem física) <input data-f="pinos" style="width:100%" value="${esc(c.pinos.join(', '))}"></label>`}
+        <div class="row"><label><input type="checkbox" data-f="janelaOn" ${c.janela?'checked':''}> janela na tampa</label>
+          ${c.janela?`<label>larg <input type="number" step="0.1" data-f="janela.w" value="${c.janela.w}"></label><label>alt <input type="number" step="0.1" data-f="janela.h" value="${c.janela.h}"></label><label>desloc. x <input type="number" step="0.1" data-f="janela.dx" value="${c.janela.dx||0}"></label><label>y <input type="number" step="0.1" data-f="janela.dy" value="${c.janela.dy||0}"></label>`:''}</div>
+        <div class="row"><label>Furo lateral (USB, cabo) <select data-f="latLado">
+          ${['','esquerda','direita','frente','tras'].map(v=>`<option value="${v}" ${(c.lateral?.lado||'')===v?'selected':''}>${v?({tras:'trás'}[v]||v):'nenhum'}</option>`).join('')}</select></label>
+          ${c.lateral?`<label>larg <input type="number" step="0.1" data-f="lateral.w" value="${c.lateral.w}"></label><label>alt <input type="number" step="0.1" data-f="lateral.h" value="${c.lateral.h}"></label><label>altura do centro <input type="number" step="0.1" data-f="lateral.z" value="${c.lateral.z}"></label>`:''}</div>
+        <div class="row"><button class="mini" data-act="save">salvar em Minhas peças</button><span class="small muted">guarda medidas e pinos para outros projetos</span></div>
+      </div>
+    </details>`}
+  </div>`).join('');
+}
+$('#compList').addEventListener('input',e=>{
+  const box=e.target.closest('.comp');if(!box)return;const c=P.comps.find(x=>x.id===box.dataset.id);const f=e.target.dataset.f;if(!c||!f)return;
+  const v=e.target.value;
+  if(f==='nome')c.nome=v;
+  else if(['L','W','H'].includes(f)){c[f]=num(v,c[f]);c.aprox=false}
+  else if(f==='pinos')c.pinos=v.split(',').map(s=>s.trim()).filter(Boolean);
+  else if(f==='fp.r1'||f==='fp.r2'){c.fp=c.fp||{gap:10,r1:[],r2:[]};c.fp[f.slice(3)]=v.split(/[,;\n]/).map(s=>s.trim()).filter(Boolean)}
+  else if(f==='fp.gap'){c.fp=c.fp||{gap:10,r1:[],r2:[]};c.fp.gap=Math.max(1,Math.round(num(v,10)))}
+  else if(f==='cols'||f==='rows'){c[f]=Math.max(2,Math.round(num(v,c[f]||10)))}
+  else if(f==='janelaOn'){c.janela=e.target.checked?{w:20,h:15,dx:0,dy:0}:null;renderComps()}
+  else if(f==='latLado'){if(!v)c.lateral=null;else c.lateral={...(c.lateral||{w:10,h:5,z:4}),lado:v};renderComps()}
+  else if(f.includes('.')){const[a,b]=f.split('.');if(c[a])c[a][b]=num(v,0)}
+  dirty();
+});
+$('#compList').addEventListener('click',async e=>{
+  const sv=e.target.closest('[data-act=save]');
+  if(sv){const c=compById(sv.closest('.comp').dataset.id);const nome=await askText('Nome em Minhas peças',c.nome);if(!nome)return;
+    const key=nome.toLowerCase().normalize('NFD').replace(/[̀-ͯ]/g,'').replace(/[^a-z0-9]+/g,'-').replace(/^-|-$/g,'')||uid();
+    const def={nome,papel:c.papel,L:c.L,W:c.W,H:c.H,pinos:c.pinos,janela:c.janela,lateral:c.lateral,fp:c.fp,cols:c.cols,rows:c.rows};
+    try{await saveMyPart(key,JSON.parse(JSON.stringify(def)));c.tipo='my:'+key;c.aprox=false;renderPresetSel();sv.textContent='salvo ✓'}catch(err){sv.textContent='não salvou'}
+    return}
+  const pi=e.target.closest('[data-act=pinia]');if(pi){askPinout(compById(pi.closest('.comp').dataset.id),pi.closest('.comp').querySelector('[data-pinmsg]'));return}
+  const b=e.target.closest('[data-act=rm]');if(!b)return;const id=b.closest('.comp').dataset.id;
+  const c=P.comps.find(x=>x.id===id);
+  if(!await askConfirm(`Remover “${c.nome}”? Os pinos dele saem dos nós.`))return;
+  P.comps=P.comps.filter(x=>x.id!==id);P.nos.forEach(n=>n.pontos=n.pontos.filter(p=>p.c!==id));
+  if(P.perf){delete P.perf.pos[id];if(P.perf.id===id)P.perf=null}
+  renderComps();dirty();
+});
+async function askPinout(c,msg){
+  const sample=await getSample();if(!sample){msg.textContent='IA indisponível nesta visualização.';return}
+  msg.textContent='Perguntando à IA…';
+  const prompt=`Preciso da pinagem FÍSICA da placa "${c.nome}" (medidas aproximadas ${c.L}×${c.W} mm), para posicioná-la numa placa perfurada de 2,54 mm.
+Se houver fotos anexadas, use a serigrafia visível para confirmar. Se não tiver certeza de algum pino, diga em "observacao".
+Fileira 1 e fileira 2: as duas barras de pinos, cada uma listada da ponta da ANTENA até a ponta do conector USB.
+Use nomes como "3V3", "5V", "GND", "GPIO10", "RST/EN"; quando o pino tiver apelido use barra: "GPIO43/TX".
+Responda APENAS com JSON: {"fileira1":[""],"fileira2":[""],"distancia_entre_fileiras_furos":10,"observacao":""}`;
+  try{
+    const opts={modelTier:'complex'};
+    if(P.fotos.length){try{const lim=await sample.limits?.();if(lim&&lim.images)opts.images=P.fotos.map(f=>dataURLtoBlob(f.data))}catch(e){}}
+    const r=await sample(prompt,opts);const j=extractJSON(r.text);
+    c.fp={gap:Math.max(1,Math.round(num(j.distancia_entre_fileiras_furos,c.fp?.gap||10))),r1:(j.fileira1||[]).map(String),r2:(j.fileira2||[]).map(String)};
+    dirty();renderComps();
+    const m=document.querySelector(`.comp[data-id="${c.id}"] [data-pinmsg]`);if(m)m.innerHTML=`<div class="alert">Preenchido pela IA: confira com a serigrafia antes de soldar.${j.observacao?' '+esc(j.observacao):''}</div>`;
+  }catch(err){msg.textContent='Não consegui: '+(err.message||err.code||err)}
+}
+
+/* código */
+$('#code').addEventListener('input',e=>{P.codigo=e.target.value;renderPinsFound();dirty()});
+$('#codeFile').onchange=async e=>{
+  const parts=[];for(const f of e.target.files){parts.push(`// ===== ${f.name} =====\n`+await f.text())}
+  P.codigo=(P.codigo?P.codigo+'\n\n':'')+parts.join('\n\n');$('#code').value=P.codigo;renderPinsFound();dirty();e.target.value='';
+};
+function findPins(code){
+  const out=[];const seen=new Set();const add=(n,v)=>{const k=n+'='+v;if(!seen.has(k)){seen.add(k);out.push([n,v])}};
+  let m;const r1=/#define\s+(\w+)\s+(?:GPIO_NUM_)?(\d{1,2})\b/g;while((m=r1.exec(code)))add(m[1],m[2]);
+  const r2=/(?:const\s+)?(?:int|uint8_t|byte|gpio_num_t|static\s+const\s+int)\s+(\w+)\s*=\s*(?:GPIO_NUM_)?(\d{1,2})\s*;/g;while((m=r2.exec(code)))add(m[1],m[2]);
+  const r3=/-D\s*(\w+)\s*=\s*(\d{1,2})\b/g;while((m=r3.exec(code)))add(m[1],m[2]);
+  const r4=/(pinMode|digitalWrite|analogRead|digitalRead|ledcAttachPin)\s*\(\s*(\d{1,2})\s*[,)]/g;while((m=r4.exec(code)))add(m[1],m[2]);
+  const r5=/Wire\.begin\s*\(\s*(\d{1,2})\s*,\s*(\d{1,2})\s*\)/g;while((m=r5.exec(code))){add('SDA (Wire)',m[1]);add('SCL (Wire)',m[2])}
+  return out.filter(([n])=>!/^(SERIAL|BAUD|WIDTH|HEIGHT|DELAY|MAX|MIN|NUM|SIZE|LEN|VERSION)/i.test(n));
+}
+function renderPinsFound(){
+  const pins=findPins(P.codigo||'');
+  $('#pinsFound').innerHTML=pins.length?`<span class="muted">Pinos que encontrei no código:</span><div class="chips" style="margin-top:.3rem">${pins.map(([n,v])=>`<span class="chip">${esc(n)} → GPIO${v}</span>`).join('')}</div>`:(P.codigo?'<span class="muted">Não achei definições de pino diretas. Se usar TFT_eSPI, cole também o User_Setup.h.</span>':'');
+}
+
+/* fotos */
+function shrink(file,max=1280,q=.72){return new Promise((res,rej)=>{const img=new Image();const u=URL.createObjectURL(file);img.onload=()=>{const s=Math.min(1,max/Math.max(img.width,img.height));const c=document.createElement('canvas');c.width=Math.round(img.width*s);c.height=Math.round(img.height*s);c.getContext('2d').drawImage(img,0,0,c.width,c.height);URL.revokeObjectURL(u);res(c.toDataURL('image/jpeg',q))};img.onerror=rej;img.src=u})}
+async function addPhotos(files){
+  for(const f of files){if(!f.type.startsWith('image/'))continue;if(P.fotos.length>=4){$('#aiProgress').textContent='Máximo de 4 fotos por projeto.';break}
+    const data=await shrink(f);const ph={id:P.id+'_'+uid(),data};P.fotos.push(ph);savePhoto(ph).catch(e=>console.warn(e));}
+  renderThumbs();dirty();
+}
+$('#photoFile').onchange=e=>{addPhotos(e.target.files);e.target.value=''};
+const drop=$('#drop');
+drop.addEventListener('dragover',e=>{e.preventDefault();drop.classList.add('over')});
+drop.addEventListener('dragleave',()=>drop.classList.remove('over'));
+drop.addEventListener('drop',e=>{e.preventDefault();drop.classList.remove('over');addPhotos(e.dataTransfer.files)});
+document.addEventListener('paste',e=>{if(step!==1||e.target.id==='code'||e.target.tagName==='TEXTAREA'||e.target.tagName==='INPUT')return;const fs=[...(e.clipboardData?.files||[])];if(fs.length)addPhotos(fs)});
+function renderThumbs(){
+  $('#thumbs').innerHTML=P.fotos.map(f=>`<figure><img src="${f.data}" alt="foto da montagem"><button data-rmph="${f.id}" aria-label="remover foto">✕</button></figure>`).join('');
+}
+$('#thumbs').onclick=e=>{const id=e.target.dataset.rmph;if(!id)return;P.fotos=P.fotos.filter(f=>f.id!==id);deletePhoto(id);renderThumbs();dirty()};
+
+/* ============ IA ============ */
+let sampleFn=null;
+async function getSample(){if(sampleFn)return sampleFn;if(!window.claude?.use)return null;sampleFn=await claude.use('sample').catch(()=>null);return sampleFn}
+function dataURLtoBlob(d){const[h,b]=d.split(',');const mime=h.match(/:(.*?);/)[1];const bin=atob(b);const a=new Uint8Array(bin.length);for(let i=0;i<bin.length;i++)a[i]=bin.charCodeAt(i);return new Blob([a],{type:mime})}
+function projectContext(){
+  return {
+    componentes:P.comps.map(c=>({id:c.id,nome:c.nome,papel:c.papel,tipo:c.tipo,medidas_mm:[c.L,c.W,c.H],pinos:c.papel==='placa'?'(placa: use 3V3, 5V, GND, GPIOn)':c.pinos})),
+    nos:P.nos.map(n=>({nome:n.nome,tipo:n.tipo,cor:n.cor,pontos:n.pontos.map(p=>{const c=P.comps.find(x=>x.id===p.c);return (c?c.nome:p.c)+' · '+p.p})})),
+    case:P.caseCfg,
+    material_que_tem:[...MAT_PADRAO,...MAT.extras].filter(temMat),
+    placa_perfurada:P.perf&&compById(P.perf.id)?{placa:compById(P.perf.id).nome,posicoes:Object.entries(P.perf.pos||{}).map(([id,p])=>({peca:compById(id)?.nome,furo:holeName(p.x,p.y),giro:(p.rot||0)*90,modo:p.modo||'conector'}))}:null
+  };
+}
+function extractJSON(t){const a=t.indexOf('{'),b=t.lastIndexOf('}');if(a<0||b<a)throw new Error('a resposta não veio em JSON');return JSON.parse(t.slice(a,b+1))}
+
+$('#analisar').onclick=async()=>{
+  const btn=$('#analisar');const prog=$('#aiProgress');
+  const sample=await getSample();
+  if(!sample){prog.innerHTML='<div class="alert err">A IA não está disponível nesta visualização. Abra a página pelo link do Claude, logada na sua conta.</div>';return}
+  if(!P.codigo.trim()&&!P.fotos.length){prog.innerHTML='<div class="alert">Cole o código ou envie ao menos uma foto.</div>';return}
+  btn.disabled=true;prog.textContent='Lendo código e fotos…';
+  const presets=Object.entries(PRESETS).map(([k,v])=>({tipo:k,nome:v.nome,papel:v.papel,pinos:v.pinos,medidas_aprox_mm:[v.L,v.W,v.H]}));
+  const prompt=`Você é tutora de eletrônica de uma pessoa que já monta projetos ESP32 em protoboard, mas se confunde quando um ponto liga em vários lugares (nós/nets) e na hora de soldar ou organizar os fios dentro de um case compacto. Escreva em português do Brasil, didático, frases curtas, sem jargão solto (se usar um termo, explique em 3-5 palavras).
+
+TAREFA: a partir do código, das peças cadastradas e das fotos, descubra as ligações elétricas (nós) e oriente a montagem organizada.
+
+REGRAS
+- O código é a fonte principal para pinos de sinal. As fotos servem para conferir. Se foto e código divergirem, ou se a foto não deixar ver, diga em "alertas" e siga o código.
+- Inclua nós de alimentação (3V3 ou 5V) e GND mesmo que o código não fale deles. Verifique a tensão de cada módulo (ex.: muitos TFT aceitam 3V3; BL pode ir no 3V3 ou num GPIO).
+- Cada nó = conjunto de pinos ligados eletricamente. Em "pontos", use o id do componente ("comp") e o nome exato do pino. Para placas use nomes como "3V3", "5V", "GND", "GPIO10". Para módulos use exatamente os nomes da lista de pinos deles.
+- Se aparecer no código ou na foto uma peça que não está cadastrada, inclua em "componentes_novos" com "ref" (ex.: "novo1"), e use essa ref nos pontos. Use "tipo" de um preset quando servir; senão "custom" com medidas e pinos.
+- Bibliotecas: TFT_eSPI define pinos no User_Setup.h; Adafruit_ST7735/ST7789 nos construtores; Wire.begin(SDA,SCL) no I²C. Se faltar informação, avise em "alertas".
+- Avise sobre pinos problemáticos do ESP usado (strapping, só entrada, pinos de flash/PSRAM no S3 como GPIO26-37 em módulos com PSRAM octal, etc.) quando forem usados.
+- Não invente medidas. Se não souber, deixe o preset e diga que é aproximado.
+- "montagem_sem_solda": passos para deixar organizado como num case de acrílico com jumpers fêmea-fêmea em feixe: comprimento, agrupamento, ordem de ligação, como dividir um nó de 3+ pontos sem solda.
+- "montagem_com_solda": passos de solda na ordem certa, para nós de 3+ pontos explique a técnica (corrente ou emenda em Y com termo-retrátil), e o que testar com multímetro.
+- "dicas_case": como posicionar as peças no case para encurtar fios e onde ficam furos (USB, tela, botões).
+- Cores de fio: vermelho para 3V3/5V, preto para GND, e para sinais escolha entre: ${SIGCYCLE.join(', ')}.
+
+Responda APENAS com JSON válido, sem texto antes ou depois:
+{"resumo":"2-3 frases sobre o que o projeto faz e como está ligado",
+ "componentes_novos":[{"ref":"novo1","tipo":"tft18|custom|...","nome":"","L":0,"W":0,"H":0,"pinos":[""]}],
+ "nos":[{"nome":"GND","tipo":"energia|terra|sinal","cor_fio":"preto","pontos":[{"comp":"id ou ref","pino":"GND"}],"nota":"opcional"}],
+ "alertas":[""],
+ "montagem_sem_solda":[""],
+ "montagem_com_solda":[""],
+ "dicas_case":[""]}
+
+PLACA E PEÇAS CADASTRADAS (papel "pcb" é placa perfurada onde ela pode soldar; não tem pinos, não entra nos nós):
+${JSON.stringify(P.comps.map(c=>({id:c.id,tipo:c.tipo,nome:c.nome,papel:c.papel,pinos:c.papel==='placa'?(c.fp&&(c.fp.r1||[]).length?{fileira1:c.fp.r1,fileira2:c.fp.r2}:'(placa)'):c.papel==='pcb'?`${c.cols}×${c.rows} furos`:c.pinos})))}
+
+MATERIAL QUE ELA TEM EM CASA (sugira soluções com isso; se faltar algo essencial, diga o que comprar):
+${[...MAT_PADRAO,...MAT.extras].filter(temMat).join('; ')||'(não informado)'}
+
+Quando houver placa perfurada, em "montagem_com_solda" pense na placa: onde posicionar o ESP e as barras de pinos dos módulos para encurtar trilhas, e lembre que ao virar a placa para soldar o lado esquerdo vira o direito.
+
+PRESETS DISPONÍVEIS:
+${JSON.stringify(presets)}
+
+FOTOS ANEXADAS: ${P.fotos.length}
+
+CÓDIGO:
+${(P.codigo||'(sem código)').slice(0,24000)}`;
+  try{
+    let images=[];
+    if(P.fotos.length){let ok=false;try{const lim=await sample.limits?.();ok=!!(lim&&lim.images)}catch(e){}
+      if(ok)images=P.fotos.map(f=>dataURLtoBlob(f.data));else prog.textContent='Esta conta não envia imagens para a IA agora; analisando só o código…'}
+    const opts={modelTier:'complex',onText:({text})=>{prog.textContent=text==='Thinking...'||!text?'Pensando…':'Recebendo resposta… '+text.length+' caracteres'}};
+    if(images.length)opts.images=images;
+    const r=await sample(prompt,opts);
+    const j=extractJSON(r.text);
+    applyAnalysis(j);
+    prog.textContent='';
+  }catch(e){
+    console.error(e);
+    prog.innerHTML=`<div class="alert err">${e.code==='not_granted'?'Você não autorizou a IA nesta página.':e.code==='rate_limited'?'Muitas chamadas seguidas. Espere um pouco e tente de novo.':'Não consegui concluir: '+esc(e.message||e.code||e)}</div>`;
+  }finally{btn.disabled=false}
+};
+function applyAnalysis(j){
+  const refMap={};
+  (j.componentes_novos||[]).forEach(n=>{
+    const key=PRESETS[n.tipo]?n.tipo:'custom';const c=compFromPreset(key);
+    if(n.nome)c.nome=n.nome;
+    if(key==='custom'){c.L=num(n.L,20);c.W=num(n.W,15);c.H=num(n.H,5);c.pinos=(n.pinos||[]).filter(Boolean);c.aprox=true}
+    P.comps.push(c);refMap[n.ref]=c.id;
+  });
+  const ids=new Set(P.comps.map(c=>c.id));
+  let si=0;
+  const nos=(j.nos||[]).map(n=>{
+    const tipo=['energia','terra','sinal'].includes(n.tipo)?n.tipo:guessTipo(n.nome);
+    let cor=String(n.cor_fio||'').toLowerCase().normalize('NFD').replace(/[̀-ͯ]/g,'');
+    if(!PALETTE.find(p=>p.k===cor))cor=tipo==='energia'?'vermelho':tipo==='terra'?'preto':SIGCYCLE[si++%SIGCYCLE.length];
+    const pontos=(n.pontos||[]).map(p=>({c:refMap[p.comp]||p.comp,p:String(p.pino||'')})).filter(p=>ids.has(p.c)&&p.p);
+    return{id:'n'+uid(),nome:n.nome||'nó',tipo,cor,pontos,nota:n.nota||'',ok:false};
+  }).filter(n=>n.pontos.length);
+  if(nos.length){P.nosAnteriores=P.nos;P.nos=nos}
+  P.analise={resumo:j.resumo||'',alertas:j.alertas||[],sem:j.montagem_sem_solda||[],com:j.montagem_com_solda||[],caseDicas:j.dicas_case||[],quando:Date.now()};
+  P.exemplo=false;
+  renderComps();renderAnalysis();dirty();
+}
+function renderAnalysis(){
+  const a=P.analise;const el=$('#aiOut');
+  if(!a){el.innerHTML=P.exemplo?'<div class="alert">Este é um projeto de <b>exemplo</b>: os pinos são ilustrativos, não são do seu circuito. Crie um projeto novo ou cole seu código e analise.</div>':'';return}
+  el.innerHTML=`${a.resumo?`<p>${esc(a.resumo)}</p>`:''}
+   ${(a.alertas||[]).filter(Boolean).map(t=>`<div class="alert">${esc(t)}</div>`).join('')}
+   <p class="small muted">Encontrei ${P.nos.length} nós. ${P.nosAnteriores?.length?'<button class="mini" id="undoNos">desfazer e voltar aos nós anteriores</button>':''}</p>
+   <button class="prim" onclick="go(2)">Ver o mapa de nós →</button>`;
+  const u=$('#undoNos');if(u)u.onclick=()=>{P.nos=P.nosAnteriores;P.nosAnteriores=null;renderAnalysis();dirty()};
+}
+
+/* ============ ETAPA 2: diagrama + tabela ============ */
+function compById(id){return P.comps.find(c=>c.id===id)}
+function pinSort(a,b){const r=s=>/GND/i.test(s)?1:/3V3|5V|VIN|VCC/i.test(s)?0:2;const ra=r(a),rb=r(b);if(ra!==rb)return ra-rb;const na=parseInt((a.match(/\d+/)||[999])[0]),nb=parseInt((b.match(/\d+/)||[999])[0]);return na-nb||a.localeCompare(b)}
+function renderDiagram(){
+  const svg=$('#diagram');
+  const used={};P.nos.forEach(n=>n.pontos.forEach(p=>{(used[p.c]=used[p.c]||new Set()).add(p.p)}));
+  const left=P.comps.filter(c=>c.papel==='placa'),right=P.comps.filter(c=>c.papel==='modulo');
+  const ROW=24,HEAD=30,GAP=22,BW=190;
+  const nets=P.nos;const W=Math.max(780,460+nets.length*34);
+  const pinPos={};const parts=[];
+  function column(list,x,side){
+    let y=16;
+    list.forEach(c=>{
+      let pins=c.papel==='placa'?[...(used[c.id]||[])].sort(pinSort):[...c.pinos];
+      (used[c.id]||new Set()).forEach(p=>{if(!pins.includes(p))pins.push(p)});
+      if(!pins.length)pins=['—'];
+      const h=HEAD+pins.length*ROW+8;
+      parts.push(`<rect x="${x}" y="${y}" width="${BW}" height="${h}" rx="8" fill="${c.papel==='placa'?'#1b1f22':'#16304a'}" stroke="${c.papel==='placa'?'#e8a066':'#4ea8ff'}" stroke-opacity=".7"/>`);
+      parts.push(`<text x="${x+10}" y="${y+20}" fill="#e9eff1" style="font-family:'Bricolage Grotesque',sans-serif;font-size:13px;font-weight:800">${esc(c.nome.length>24?c.nome.slice(0,23)+'…':c.nome)}</text>`);
+      pins.forEach((p,i)=>{
+        const py=y+HEAD+i*ROW+12;const px=side==='L'?x+BW:x;
+        pinPos[c.id+'|'+p]={x:px,y:py};
+        const isUsed=used[c.id]&&used[c.id].has(p);
+        const tx=side==='L'?x+BW-12:x+12;
+        parts.push(`<text class="pinlbl" data-pin="${esc(c.id+'|'+p)}" x="${tx}" y="${py+4}" text-anchor="${side==='L'?'end':'start'}" fill="${isUsed?'#e9eff1':'#5d6f78'}">${esc(p)}</text>`);
+        parts.push(`<circle cx="${px}" cy="${py}" r="3" fill="${isUsed?'#cfd8dc':'#3a4a52'}"/>`);
+      });
+      y+=h+GAP;
+    });
+    return y;
+  }
+  const hL=column(left,16,'L');const hR=column(right,W-16-BW,'R');
+  const H=Math.max(hL,hR,120);
+  const x0=16+BW+28,x1=W-16-BW-28;const n=nets.length;
+  const netParts=nets.map((net,i)=>{
+    const cx=n===1?(x0+x1)/2:x0+(x1-x0)*(i+.5)/n;const hex=hexOf(net.cor);
+    const pts=net.pontos.map(p=>({...p,pos:pinPos[p.c+'|'+p.p]})).filter(p=>p.pos);
+    if(!pts.length)return '';
+    const ys=pts.map(p=>p.pos.y);const ymin=Math.min(...ys),ymax=Math.max(...ys);
+    let s=`<g class="net" data-net="${net.id}" style="cursor:pointer">`;
+    s+=`<line x1="${cx}" y1="${ymin}" x2="${cx}" y2="${ymax}" stroke="${hex}" stroke-width="3" stroke-linecap="round"/>`;
+    pts.forEach(p=>{s+=`<path d="M${p.pos.x} ${p.pos.y} H${cx}" stroke="${hex}" stroke-width="2.4" fill="none"/>`;s+=shapeSVG(net.tipo,p.pos.x+(p.pos.x<cx?9:-9),p.pos.y,5.5,hex);s+=`<circle cx="${cx}" cy="${p.pos.y}" r="3.2" fill="${hex}"/>`});
+    if(pts.length>=3){const my=(ymin+ymax)/2;s+=`<circle cx="${cx}" cy="${my}" r="10" fill="#0e161a" stroke="#e8a066" stroke-width="2"/><text x="${cx}" y="${my+4}" text-anchor="middle" fill="#e8a066" style="font-size:11px;font-weight:700">${pts.length}</text>`}
+    s+=`<text x="${cx}" y="${ymin-8}" text-anchor="middle" fill="${hex}" style="font-size:11px;font-weight:700">${esc(net.nome)}</text>`;
+    s+=`<line x1="${cx}" y1="${ymin}" x2="${cx}" y2="${ymax}" stroke="transparent" stroke-width="16"/></g>`;
+    return s;
+  }).join('');
+  svg.setAttribute('viewBox',`0 0 ${W} ${H}`);svg.setAttribute('width','100%');svg.style.maxWidth=Math.round(W*1.35)+'px';svg.removeAttribute('height');
+  svg.innerHTML=(nets.length?'':`<text x="${W/2}" y="${H/2}" text-anchor="middle" fill="#9aabb3">Sem nós ainda: analise com a IA ou crie um nó abaixo.</text>`)+parts.join('')+netParts;
+  applyFocus();
+}
+function applyFocus(){
+  const svg=$('#diagram');svg.classList.toggle('focus',!!focusNet);
+  svg.querySelectorAll('.net').forEach(g=>g.classList.toggle('on',g.dataset.net===focusNet));
+  const net=P.nos.find(n=>n.id===focusNet);const keys=new Set(net?net.pontos.map(p=>p.c+'|'+p.p):[]);
+  svg.querySelectorAll('.pinlbl').forEach(t=>t.classList.toggle('on',keys.has(t.dataset.pin)));
+  document.querySelectorAll('#netTable tr[data-net]').forEach(tr=>tr.classList.toggle('on',tr.dataset.net===focusNet));
+}
+$('#diagram').addEventListener('mouseover',e=>{const g=e.target.closest('.net');if(g){focusNet=g.dataset.net;applyFocus()}});
+$('#diagram').addEventListener('mouseleave',()=>{focusNet=null;applyFocus()});
+$('#diagram').addEventListener('click',e=>{const g=e.target.closest('.net');focusNet=g?(focusNet===g.dataset.net?null:g.dataset.net):null;applyFocus()});
+
+function renderNetTable(){
+  const t=$('#netTable');
+  const compOpts=P.comps.map(c=>`<option value="${c.id}">${esc(c.nome)}</option>`).join('');
+  const pinList=[...new Set([...BOARD_PINS,...P.comps.flatMap(c=>c.pinos)])];
+  t.innerHTML=`<datalist id="pinDL">${pinList.map(p=>`<option value="${esc(p)}">`).join('')}</datalist>
+  <tr><th></th><th>nó</th><th>tipo / fio</th><th>pontos (peça · pino)</th><th>conferido</th><th></th></tr>`+
+  P.nos.map(n=>`<tr data-net="${n.id}">
+    <td>${shapeIcon(n.tipo,hexOf(n.cor),18)}</td>
+    <td><input class="nm" data-nf="nome" value="${esc(n.nome)}">${n.nota?`<div class="small muted" style="max-width:16em">${esc(n.nota)}</div>`:''}</td>
+    <td><select data-nf="tipo">${['energia','terra','sinal'].map(v=>`<option ${n.tipo===v?'selected':''}>${v}</option>`).join('')}</select><br>
+        <select data-nf="cor" style="margin-top:.25rem">${PALETTE.map(p=>`<option value="${p.k}" ${n.cor===p.k?'selected':''}>fio ${p.k}</option>`).join('')}</select></td>
+    <td>${n.pontos.map((p,i)=>{const c=compById(p.c);return `<span class="pt">${esc(c?c.nome.split(' ')[0]:'?')} · ${esc(p.p)}<button data-rmpt="${i}" aria-label="remover ponto">✕</button></span>`}).join('')}
+      <div class="addpt"><select data-np="c">${compOpts}</select><input data-np="p" list="pinDL" placeholder="pino"><button class="mini" data-addpt>+</button></div></td>
+    <td><input type="checkbox" data-nf="ok" ${n.ok?'checked':''} aria-label="conferido"></td>
+    <td><button class="mini ghost" data-rmnet aria-label="apagar nó">✕</button></td>
+  </tr>`).join('');
+}
+$('#netTable').addEventListener('change',e=>{
+  const tr=e.target.closest('tr[data-net]');if(!tr)return;const n=P.nos.find(x=>x.id===tr.dataset.net);const f=e.target.dataset.nf;if(!n||!f)return;
+  if(f==='ok')n.ok=e.target.checked;else n[f]=e.target.value;
+  if(f==='tipo'||f==='cor'){renderNetTable()}
+  renderDiagram();dirty();
+});
+$('#netTable').addEventListener('input',e=>{if(e.target.dataset.nf==='nome'){const tr=e.target.closest('tr');const n=P.nos.find(x=>x.id===tr.dataset.net);n.nome=e.target.value;renderDiagram();dirty()}});
+$('#netTable').addEventListener('click',e=>{
+  const tr=e.target.closest('tr[data-net]');if(!tr)return;const n=P.nos.find(x=>x.id===tr.dataset.net);
+  if(e.target.dataset.rmpt!==undefined){n.pontos.splice(+e.target.dataset.rmpt,1);renderNets();dirty()}
+  else if(e.target.hasAttribute('data-addpt')){const c=tr.querySelector('[data-np=c]').value,p=tr.querySelector('[data-np=p]').value.trim();if(!p)return;n.pontos.push({c,p});renderNets();dirty()}
+  else if(e.target.hasAttribute('data-rmnet')){P.nos=P.nos.filter(x=>x!==n);renderNets();dirty()}
+});
+$('#netTable').addEventListener('mouseover',e=>{const tr=e.target.closest('tr[data-net]');if(tr&&focusNet!==tr.dataset.net){focusNet=tr.dataset.net;applyFocus()}});
+$('#addNet').onclick=()=>{const used=new Set(P.nos.map(n=>n.cor));const cor=SIGCYCLE.find(k=>!used.has(k))||'cinza';P.nos.push({id:'n'+uid(),nome:'novo',tipo:'sinal',cor,pontos:[],ok:false});renderNets();dirty()};
+function renderNets(){renderDiagram();renderNetTable();applyFocus()}
+
+/* ============ ETAPA 3: ligar ============ */
+document.querySelectorAll('.seg button[data-mode]').forEach(b=>b.onclick=()=>{ligarModo=b.dataset.mode;document.querySelectorAll('.seg button[data-mode]').forEach(x=>x.setAttribute('aria-pressed',x===b));renderLigar()});
+function pname(p){const c=compById(p.c);return `<span class="pin">${esc(c?c.nome.split(/[ (]/)[0]:'?')} · ${esc(p.p)}</span>`}
+function orderPoints(net){const pts=[...net.pontos];pts.sort((a,b)=>((compById(a.c)?.papel==='placa')?0:1)-((compById(b.c)?.papel==='placa')?0:1));return pts}
+function wireLen(a,b,lay){
+  if(!lay)return null;const pa=lay.pl.find(x=>x.c.id===a.c),pb=lay.pl.find(x=>x.c.id===b.c);if(!pa||!pb)return null;
+  const ca=[pa.x0+pa.L/2,pa.y0+pa.W/2,pa.z0+pa.H],cb=[pb.x0+pb.L/2,pb.y0+pb.W/2,pb.z0+pb.H];
+  const d=Math.abs(ca[0]-cb[0])+Math.abs(ca[1]-cb[1])+Math.abs(ca[2]-cb[2])+35;return Math.max(5,Math.ceil(d/10));
+}
+function renderLigar(){
+  const lay=layoutCase();const isPcb=ligarModo==='pcb';
+  $('#netCards').hidden=isPcb;$('#perfBox').hidden=!isPcb;
+  $('#ligarLede').innerHTML=ligarModo==='sem'
+   ?'Como no case de acrílico: cada ligação é um jumper fêmea–fêmea cortado no comprimento, os fios do mesmo lado andam juntos em feixe e as placas ficam presas na base. Comprimentos estimados pela posição das peças no case (etapa 4).'
+   :isPcb?'Tudo soldado numa placa perfurada, compacto. Você posiciona as peças nos furos e o site traça as trilhas por baixo. Na placa perfurada, cada furo é uma ilha solta: a ligação entre furos é você quem faz, com ponte de estanho (furos vizinhos) ou fio desencapado (trechos maiores).'
+   :'Cada nó vira um fio soldado. Para nós com 3 ou mais pontos, o segredo é decidir antes <b>a ordem</b> em que o fio passa por eles. Coloque o termo-retrátil no fio <b>antes</b> de soldar.';
+  if(isPcb)renderPerf();
+  const a=P.analise;const list=a?(ligarModo==='sem'?a.sem:a.com):[];
+  $('#ligarAI').innerHTML=list&&list.length?`<div class="card"><h3>Para este projeto (IA)</h3><ol style="margin:.5rem 0 0 1.2rem;padding:0">${list.map(t=>`<li>${esc(t)}</li>`).join('')}</ol></div>`:'';
+  const nets=[...P.nos].sort((x,y)=>({energia:0,terra:1,sinal:2}[x.tipo]-{energia:0,terra:1,sinal:2}[y.tipo]));
+  $('#netCards').innerHTML=nets.length?nets.map(n=>{
+    const hex=hexOf(n.cor);const pts=orderPoints(n);const k=pts.length;
+    let body='';
+    if(k<2)body='<p class="muted small">Só um ponto: falta ligar este nó a alguma coisa (confira na etapa 2).</p>';
+    else if(ligarModo==='sem'){
+      if(k===2){const L=wireLen(pts[0],pts[1],lay);body=`<ol><li>1 jumper fêmea–fêmea <b>${n.cor}</b>${L?` de ~${L} cm`:''}: ${pname(pts[0])} → ${pname(pts[1])}.</li></ol>`}
+      else body=`<p class="small">Este nó se divide em <b>${k}</b> lugares. Um jumper só liga dois pontos, então o nó precisa de um <b>hub</b>:</p>
+       <ol>${(()=>{const hub=`<li><b>Mini protoboard como hub</b>: reserve uma fileira só para ${esc(n.nome)}. Ligue um jumper macho–fêmea ${n.cor} de cada ponto até essa fileira: ${pts.map(pname).join(', ')}.</li>`;
+         const y=`<li><b>Jumper em Y</b> (1 para 2)${k>3?', encadeado,':''} saindo de ${pname(pts[0])}.</li>`;
+         const perf=`<li><b>Pedacinho de placa perfurada como hub</b>: uma barra de pinos macho de ${k} pinos soldada numa tira de placa, com os pinos unidos por baixo. Vira um “distribuidor” de ${esc(n.nome)} (uma solda só, depois tudo encaixa).</li>`;
+         const hasHub=temMat('Mini protoboard'),hasY=temMat('Jumper em Y (1 para 2)'),hasPerf=temMat('Placa perfurada 7×5 cm')||temMat('Placa perfurada 4×6 cm');
+         return (hasY&&!hasHub?y+hub:hub+y)+(hasPerf?perf:'');})()}</ol>
+       <p class="small muted">No case, a mini protoboard entra como peça (há um modelo “hub de nós” na lista).</p>`;
+    }else{
+      if(k===2){const L=wireLen(pts[0],pts[1],lay);body=`<ol><li>Corte um fio ${n.cor}${L?` de ~${L} cm`:''} e estanhe as duas pontas.</li><li>Solde em ${pname(pts[0])}, depois em ${pname(pts[1])}.</li></ol>`}
+      else{
+        body=`<div class="tree">${treeSVG(n,pts,hex)}</div><p class="small"><b>Corrente</b> (mais compacto): o fio vai de um ponto ao próximo; nos pontos do meio entram 2 fios.</p><ol>`;
+        for(let i=0;i<k-1;i++){const L=wireLen(pts[i],pts[i+1],lay);body+=`<li>Fio ${i+1}${L?` (~${L} cm)`:''}: ${pname(pts[i])} → ${pname(pts[i+1])}.${i>0?` Em ${pname(pts[i])} já tem um fio: estanhe o pino, junte as duas pontas lado a lado e aqueça uma vez só.`:''}</li>`}
+        body+=`</ol><p class="small muted"><b>Se um dos pontos for conector</b> (Dupont, não dá para soldar 2 fios): faça uma <b>emenda em Y</b>. Torça as pontas, solde, cubra com termo-retrátil e leve um único fio até o conector.</p>`;
+      }
+    }
+    return `<article class="netcard" style="--c:${hex}"><h3>${shapeIcon(n.tipo,hex,18)}${esc(n.nome)} <span class="small muted" style="font-weight:400">· ${n.tipo} · fio ${n.cor} · ${k} ponto${k>1?'s':''}</span>${n.ok?'<span class="small" style="color:var(--ok)">✓ conferido</span>':''}</h3>${body}</article>`;
+  }).join(''):'<div class="empty">Sem nós ainda. Volte à etapa 1 e analise com a IA, ou crie nós na etapa 2.</div>';
+
+  // continuidade
+  const items=[];
+  P.nos.forEach(n=>{const pts=orderPoints(n);for(let i=1;i<pts.length;i++)items.push({k:'c_'+n.id+'_'+i,t:`<b style="color:${hexOf(n.cor)}">${esc(n.nome)}</b>: apita entre ${pname(pts[0])} e ${pname(pts[i])}`})});
+  const pw=P.nos.filter(n=>n.tipo==='energia'),gn=P.nos.filter(n=>n.tipo==='terra');
+  pw.forEach(a=>gn.forEach(b=>items.push({k:'x_'+a.id+'_'+b.id,t:`<b style="color:var(--err)">NÃO</b> pode apitar entre ${esc(a.nome)} e ${esc(b.nome)} (seria curto-circuito)`})));
+  if(P.nos.filter(n=>n.tipo==='sinal').length>1)items.push({k:'s_vizinhos',t:'Pinos de sinal vizinhos <b>não</b> apitam entre si (se apitar, tem estanho ou fio encostando)'});
+  $('#contList').innerHTML=items.length?items.map(it=>`<label class="${it.minor?'small muted':''}"><input type="checkbox" data-ck="${it.k}" ${P.checks[it.k]?'checked':''}><span>${it.t}</span></label>`).join(''):'<p class="muted small">Aparece quando houver nós.</p>';
+
+  $('#learnBox').innerHTML=isPcb?`<summary>Solda em placa perfurada</summary><ol>
+    <li><b>Planeje com a placa virada</b> (vista de baixo). Marque o furo A1 com caneta nos dois lados: é o seu ponto de referência.</li>
+    <li>Prenda o ESP numa <b>barra de pinos fêmea</b> soldada na placa: ele sai para regravar ou trocar, e você não aquece o ESP.</li>
+    <li>Furos vizinhos: <b>ponte de estanho</b>. Aqueça os dois e alimente o estanho no meio.</li>
+    <li>Trechos de 3 furos ou mais: <b>fio desencapado</b> (sobra de perna de resistor ou cabinho sem capa) deitado sobre as ilhas, soldado nas pontas e a cada 2–3 furos.</li>
+    <li>Quando duas trilhas precisam se cruzar: uma delas vira <b>fio isolado por cima</b> da placa.</li>
+    <li>Ao terminar cada nó, multímetro no bipe: as pontas do nó apitam, os furos vizinhos de outros nós não.</li></ol>`
+   :ligarModo==='com'?`<summary>Solda em 6 pontos</summary><ol>
+    <li>Ferro entre 320 e 350 °C, estanho 0,8 mm com fluxo. Ponta limpa na esponja/palha de latão.</li>
+    <li><b>Estanhe antes</b>: passe um pouco de estanho no fio desencapado (3–4 mm) e no pino.</li>
+    <li>Encoste o ferro <b>no pino e no fio ao mesmo tempo</b> por 2–3 s; o estanho escorre sozinho. Se ficar bolinha fosca, faltou calor.</li>
+    <li>Termo-retrátil <b>antes</b> de soldar a segunda ponta (todo mundo esquece uma vez).</li>
+    <li>Solde primeiro os nós de energia e terra, testando cada um; depois os sinais.</li>
+    <li>Use “terceira mão” ou fita crepe para segurar a placa; prenda o fio dobrando a ponta no furo.</li></ol>`
+   :`<summary>Organizar sem solda (como no acrílico)</summary><ol>
+    <li>Fixe as placas na base primeiro (guias do case, fita dupla-face fina ou parafuso M2).</li>
+    <li>Use jumpers fêmea–fêmea do mesmo comprimento para cada lado; sobra vira laço escondido embaixo.</li>
+    <li>Ligue na <b>ordem física dos pinos</b> do módulo: os fios saem em fita, sem cruzar.</li>
+    <li>Separe os jumpers de uma fita colorida (“flat”) mantendo a sequência de cores: fica igual à foto.</li>
+    <li>Energia e terra primeiro, com vermelho e preto. Assim, se trocar um sinal, não queima nada.</li>
+    <li>Nó com 3+ pontos: mini protoboard ou jumper Y, nunca dois fios forçados num pino só.</li></ol>`;
+}
+$('#contList').addEventListener('change',e=>{const k=e.target.dataset.ck;if(k){P.checks[k]=e.target.checked;dirty()}});
+function treeSVG(n,pts,hex){
+  const w=300,h=26+pts.length*22;let s=`<svg width="100%" viewBox="0 0 ${w} ${h}" style="max-width:${w}px">`;
+  pts.forEach((p,i)=>{const y=16+i*22;const c=compById(p.c);
+    if(i>0)s+=`<path d="M40 ${y-22} V${y}" stroke="${hex}" stroke-width="2.5"/>`;
+    s+=shapeSVG(n.tipo,40,y,6,hex);
+    s+=`<text x="56" y="${y+4}" fill="#e9eff1" font-family="ui-monospace,monospace" font-size="12">${esc((c?c.nome.split(/[ (]/)[0]:'?')+' · '+p.p)}${i>0&&i<pts.length-1?'  ← 2 fios aqui':''}</text>`});
+  return s+'</svg>';
+}
+
+/* ============ PLACA PERFURADA ============ */
+const HOLE=2.54;let selPart=null;
+const colName=x=>x<26?String.fromCharCode(65+x):String.fromCharCode(64+Math.floor(x/26))+String.fromCharCode(65+x%26);
+const holeName=(x,y)=>colName(x)+(y+1);
+function pnorm(s){s=String(s).toUpperCase().replace(/\(.*?\)/g,'').replace(/\s+/g,'');s=s.replace(/^GPIO_?NUM_?/,'').replace(/^GPIO/,'').replace(/^IO(?=\d)/,'');
+  if(['G','GND','TERRA','−','-'].includes(s))return 'GND';if(['3V3','3.3V','3V','3.3','+3V3','+3.3V'].includes(s))return '3V3';if(['5V','+5V','VBUS'].includes(s))return '5V';return s}
+const pinMatch=(fpName,netPin)=>{const t=pnorm(netPin);return String(fpName).split('/').some(a=>pnorm(a)===t)};
+function perfComp(){if(!P.perf)return null;const c=compById(P.perf.id);if(!c||c.papel!=='pcb')return null;return c}
+function footprint(c,modo){
+  const pins=[],body=[];
+  if(c.papel==='placa'){
+    const g=Math.max(1,(c.fp?.gap|0)||10),r1=c.fp?.r1||[],r2=c.fp?.r2||[];const n=Math.max(r1.length,r2.length,1);
+    r1.forEach((nm,i)=>pins.push({name:nm,x:i,y:0}));r2.forEach((nm,i)=>pins.push({name:nm,x:i,y:g}));
+    for(let y=0;y<=g;y++)for(let x=0;x<n;x++)body.push([x,y]);
+  }else{
+    const n=Math.max(c.pinos.length,1);c.pinos.forEach((nm,i)=>pins.push({name:nm,x:i,y:0}));
+    if(modo==='direto'){const w=Math.max(n,Math.ceil(num(c.L)/HOLE)),h=Math.max(1,Math.ceil(num(c.W)/HOLE));for(let y=0;y<h;y++)for(let x=0;x<w;x++)body.push([x,y])}
+    else for(let x=0;x<n;x++)body.push([x,0]);
+  }
+  return{pins,body};
+}
+function placeFP(c,pos){
+  let{pins,body}=footprint(c,pos.modo);const k=((pos.rot|0)%4+4)%4;
+  const rot=([x,y])=>{for(let i=0;i<k;i++)[x,y]=[-y,x];return[x,y]};
+  pins=pins.map(p=>{const[x,y]=rot([p.x,p.y]);return{...p,x,y}});body=body.map(rot);
+  const mx=Math.min(...body.map(b=>b[0])),my=Math.min(...body.map(b=>b[1]));
+  return{c,pos,pins:pins.map(p=>({name:p.name,gx:p.x-mx+pos.x,gy:p.y-my+pos.y})),body:body.map(([x,y])=>[x-mx+pos.x,y-my+pos.y])};
+}
+function routePerf(){
+  const perf=perfComp();if(!perf)return null;
+  const C=Math.max(2,perf.cols|0),R=Math.max(2,perf.rows|0);const inside=(x,y)=>x>=0&&y>=0&&x<C&&y<R;const I=(x,y)=>y*C+x;
+  const parts=[],problems=[];const bodyOwner=new Map();
+  for(const[cid,pos]of Object.entries(P.perf.pos||{})){const c=compById(cid);if(!c||c.papel==='pcb'){delete P.perf.pos[cid];continue}
+    const pl=placeFP(c,pos);pl.bad=false;
+    if(pl.body.some(([x,y])=>!inside(x,y))){pl.bad=true;problems.push(`${c.nome}: parte fica fora da placa.`)}
+    pl.body.forEach(([x,y])=>{if(!inside(x,y))return;const h=I(x,y);if(bodyOwner.has(h)&&bodyOwner.get(h)!==cid){pl.bad=true;const o=compById(bodyOwner.get(h));const msg=`${c.nome} está em cima de ${o?.nome}.`;if(!problems.includes(msg))problems.push(msg)}else bodyOwner.set(h,cid)});
+    if(c.papel==='placa'&&!(c.fp?.r1||[]).length&&!(c.fp?.r2||[]).length)problems.push(`${c.nome}: falta a pinagem física (etapa 1, “pinagem física”).`);
+    parts.push(pl)}
+  const base=new Array(C*R).fill(null);const pinAt=new Map();
+  parts.forEach(pl=>pl.pins.forEach(p=>{if(inside(p.gx,p.gy)){const h=I(p.gx,p.gy);pinAt.set(h,{c:pl.c,name:p.name});base[h]='X'}}));
+  const nets=P.nos.map(n=>{const terms=[],off=[];
+    n.pontos.forEach(pt=>{const pl=parts.find(x=>x.c.id===pt.c);if(!pl){off.push({...pt,why:'fora'});return}
+      const hs=pl.pins.filter(p=>inside(p.gx,p.gy)&&pinMatch(p.name,pt.p)).map(p=>I(p.gx,p.gy));
+      if(hs.length)terms.push(hs);else off.push({...pt,why:'sem-pino'})});
+    return{n,terms,off}});
+  nets.forEach(o=>o.terms.flat().forEach(h=>base[h]=o.n.id));
+  const D=[[1,0],[-1,0],[0,1],[0,-1]];
+  const spread=o=>{const hs=o.terms.flat();const xs=hs.map(h=>h%C),ys=hs.map(h=>(h/C)|0);return(Math.max(...xs)-Math.min(...xs))+(Math.max(...ys)-Math.min(...ys))};
+  function run(order){
+    const occ=base.slice();const res={};let fails=0,len=0;
+    for(const o of order){
+      const id=o.n.id;const tree=new Set(o.terms[0]);const paths=[],fl=[];const rem=o.terms.slice(1);
+      while(rem.length){
+        const targets=new Map();rem.forEach((t,ti)=>t.forEach(h=>targets.set(h,ti)));
+        const prev=new Int32Array(C*R).fill(-2);const q=[];tree.forEach(h=>{prev[h]=-1;q.push(h)});let hit=-1;
+        for(let qi=0;qi<q.length&&hit<0;qi++){const h=q[qi],x=h%C,y=(h/C)|0;
+          for(const[dx,dy]of D){const nx=x+dx,ny=y+dy;if(!inside(nx,ny))continue;const nh=I(nx,ny);if(prev[nh]!==-2)continue;
+            if(targets.has(nh)){prev[nh]=h;hit=nh;break}const oc=occ[nh];if(oc!==null&&oc!==id)continue;prev[nh]=h;q.push(nh)}}
+        if(hit<0){const t=rem.shift();let best=null,bd=1e9;tree.forEach(h=>{const d=Math.abs(h%C-t[0]%C)+Math.abs(((h/C)|0)-((t[0]/C)|0));if(d<bd){bd=d;best=h}});fl.push([best,t[0]]);t.forEach(h=>tree.add(h));fails++;continue}
+        const t=rem.splice(targets.get(hit),1)[0];let h=hit;const path=[h];while(prev[h]>=0){h=prev[h];path.push(h)}
+        path.reverse();paths.push(path);len+=path.length;path.forEach(h=>{tree.add(h);occ[h]=id});t.forEach(h=>tree.add(h));
+      }
+      res[id]={paths,fails:fl};
+    }
+    return{res,fails,len,occ};
+  }
+  const routable=nets.filter(o=>o.terms.length>=2);
+  const rank=t=>({energia:0,terra:1,sinal:2})[t];
+  const orders=[[...routable].sort((a,b)=>spread(a)-spread(b)),[...routable].sort((a,b)=>rank(a.n.tipo)-rank(b.n.tipo)||spread(a)-spread(b)),[...routable].sort((a,b)=>spread(b)-spread(a))];
+  let best=null;orders.forEach(o=>{const r=run(o);if(!best||r.fails<best.fails||(r.fails===best.fails&&r.len<best.len))best=r});
+  return{C,R,perf,parts,pinAt,nets,problems,...(best||{res:{},fails:0,len:0})};
+}
+function runsOf(path,C){
+  const out=[];if(path.length<2)return out;let s=0;
+  const dir=(a,b)=>(b%C-a%C)+','+(((b/C)|0)-((a/C)|0));
+  for(let i=1;i<path.length;i++){if(i===path.length-1||dir(path[i-1],path[i])!==dir(path[i],path[i+1])){out.push([path[s],path[i],i-s]);s=i}}
+  return out;
+}
+function autoArrange(){
+  const perf=perfComp();if(!perf)return[];const C=perf.cols|0,R=perf.rows|0;
+  const keep=P.perf.pos;P.perf.pos={};const occ=new Set();const skipped=[];
+  const list=P.comps.filter(c=>c.papel!=='pcb'&&c.incluir!==false).sort((a,b)=>(a.papel==='placa'?0:1)-(b.papel==='placa'?0:1)||(b.pinos.length-a.pinos.length));
+  const netHoles=()=>{const r=routeLite();return r};
+  function routeLite(){const map={};Object.entries(P.perf.pos).forEach(([cid,pos])=>{const pl=placeFP(compById(cid),pos);pl.pins.forEach(p=>{P.nos.forEach(n=>n.pontos.forEach(pt=>{if(pt.c===cid&&pinMatch(p.name,pt.p))(map[n.id]=map[n.id]||[]).push([p.gx,p.gy])}))})});return map}
+  for(const c of list){
+    const modo=c.papel==='placa'?undefined:(keep[c.id]?.modo||'conector');
+    let placed=null;
+    for(const att of[{edge:1,clr:1},{edge:0,clr:1},{edge:0,clr:0}]){
+      const nh=netHoles();let bestScore=1e9;
+      for(const rot of[0,1,2,3])for(let y=0;y<R;y++)for(let x=0;x<C;x++){
+        const pl=placeFP(c,{x,y,rot,modo});
+        if(pl.body.some(([bx,by])=>bx<att.edge||by<att.edge||bx>=C-att.edge||by>=R-att.edge))continue;
+        let clash=false;for(const[bx,by]of pl.body){for(let dy=-att.clr;dy<=att.clr&&!clash;dy++)for(let dx=-att.clr;dx<=att.clr;dx++)if(occ.has((by+dy)*C+bx+dx)){clash=true;break}if(clash)break}
+        if(clash)continue;
+        let score=0;
+        if(c.papel==='placa'){score=Math.abs(x-att.edge)+Math.abs(y-att.edge)+rot*0.1}
+        else pl.pins.forEach(p=>P.nos.forEach(n=>n.pontos.forEach(pt=>{if(pt.c===c.id&&pinMatch(p.name,pt.p)&&nh[n.id]){score+=Math.min(...nh[n.id].map(([hx,hy])=>Math.abs(hx-p.gx)+Math.abs(hy-p.gy)))}})));
+        if(score<bestScore){bestScore=score;placed={x,y,rot,modo}}
+      }
+      if(placed)break;
+    }
+    if(placed){P.perf.pos[c.id]=placed;placeFP(c,placed).body.forEach(([x,y])=>occ.add(y*C+x))}else skipped.push(c.nome);
+  }
+  return skipped;
+}
+function renderPerf(){
+  const box=$('#perfBox');const pcbs=P.comps.filter(c=>c.papel==='pcb');
+  if(!pcbs.length){box.innerHTML=`<div class="empty">Escolha a placa perfurada que você vai usar:<div class="row" style="justify-content:center;margin-top:.7rem"><button class="prim" data-addperf="perf7x5">7 × 5 cm</button><button class="prim" data-addperf="perf4x6">4 × 6 cm</button></div><p class="small">Outra medida? Adicione e ajuste os furos na etapa 1 (dá para salvar em Minhas peças).</p></div>`;return}
+  if(!perfComp())P.perf={id:pcbs[0].id,pos:P.perf?.pos||{},view:P.perf?.view||'baixo'};
+  const r=routePerf();const{C,R}=r;const view=P.perf.view||'baixo';const flip=view==='baixo';
+  const PX=22,M=30;const W=M+C*PX+12,H=M+R*PX+12;
+  const cx=x=>M+(flip?C-1-x:x)*PX+PX/2,cy=y=>M+y*PX+PX/2;const hx=h=>cx(h%C),hy=h=>cy((h/C)|0);
+  const netById=Object.fromEntries(P.nos.map(n=>[n.id,n]));
+  let s=`<rect x="${M-4}" y="${M-4}" width="${C*PX+8}" height="${R*PX+8}" rx="6" fill="${flip?'#2a2015':'#1e2a1c'}" stroke="#5a4630"/>`;
+  for(let x=0;x<C;x++)s+=`<text x="${cx(x)}" y="${M-10}" text-anchor="middle" fill="#9aabb3">${colName(x)}</text>`;
+  for(let y=0;y<R;y++)s+=`<text x="${M-10}" y="${cy(y)+3}" text-anchor="end" fill="#9aabb3">${y+1}</text>`;
+  // corpos
+  const bodyRect=pl=>{const xs=pl.body.map(b=>cx(b[0])),ys=pl.body.map(b=>cy(b[1]));return{x:Math.min(...xs)-PX/2+2,y:Math.min(...ys)-PX/2+2,w:Math.max(...xs)-Math.min(...xs)+PX-4,h:Math.max(...ys)-Math.min(...ys)+PX-4}};
+  let bodies='';r.parts.forEach(pl=>{const b=bodyRect(pl);const isB=pl.c.papel==='placa';const sel=selPart===pl.c.id;
+    bodies+=`<g class="part" data-part="${pl.c.id}"><rect x="${b.x}" y="${b.y}" width="${b.w}" height="${b.h}" rx="5" fill="${flip?'none':(isB?'#1b1f22cc':'#16304acc')}" stroke="${pl.bad?'#ff6b5e':sel?'#ffffff':isB?'#e8a066':'#4ea8ff'}" stroke-width="${sel||pl.bad?2.5:1.5}" ${flip?'stroke-dasharray="5 4"':''}/>
+      <text x="${b.x+6}" y="${b.y+13}" fill="${isB?'#e8a066':'#7ec0ff'}" style="font-size:11px;font-weight:700" pointer-events="none">${esc(pl.c.nome.split(/[ (]/)[0])}${flip?' (do outro lado)':''}</text></g>`});
+  // furos
+  let holes='';for(let y=0;y<R;y++)for(let x=0;x<C;x++){const h=y*C+x;holes+=`<g class="hole" data-h="${h}"><circle cx="${cx(x)}" cy="${cy(y)}" r="7" fill="#b87a45" fill-opacity="${flip?.55:.25}"/><circle cx="${cx(x)}" cy="${cy(y)}" r="2.3" fill="#0c1215"/><title>${holeName(x,y)}</title></g>`}
+  // trilhas
+  let tr='';Object.entries(r.res||{}).forEach(([id,o])=>{const n=netById[id];if(!n)return;const hex=hexOf(n.cor);
+    o.paths.forEach(p=>{tr+=`<polyline points="${p.map(h=>hx(h)+','+hy(h)).join(' ')}" fill="none" stroke="${hex}" stroke-width="${flip?7:3}" stroke-linecap="round" stroke-linejoin="round" ${flip?'':'stroke-dasharray="2 5" opacity=".7"'} pointer-events="none"/>`});
+    o.fails.forEach(([a,b])=>{tr+=`<path d="M${hx(a)} ${hy(a)} Q${(hx(a)+hx(b))/2} ${Math.min(hy(a),hy(b))-30} ${hx(b)} ${hy(b)}" fill="none" stroke="${hex}" stroke-width="2.5" stroke-dasharray="6 4" pointer-events="none"/>`})});
+  // pinos
+  let pins='';r.parts.forEach(pl=>pl.pins.forEach(p=>{if(p.gx<0||p.gy<0||p.gx>=C||p.gy>=R)return;const h=p.gy*C+p.gx;
+    const n=P.nos.find(n=>n.pontos.some(pt=>pt.c===pl.c.id&&pinMatch(p.name,pt.p)));
+    pins+=n?`<g pointer-events="none">${shapeSVG(n.tipo,hx(h),hy(h),6.5,hexOf(n.cor),'stroke="#0c1215" stroke-width="1.5"')}</g>`:`<circle cx="${hx(h)}" cy="${hy(h)}" r="5" fill="none" stroke="#9aabb3" stroke-width="1.5" pointer-events="none"/>`;
+    pins+=`<title>${esc(pl.c.nome)} · ${esc(p.name)}</title>`}));
+  const svg=`<svg id="perfSvg" viewBox="0 0 ${W} ${H}" width="${W}" height="${H}">${s}${flip?holes+bodies:bodies+holes}${tr}${pins}</svg>`;
+
+  // bandeja
+  const trayItems=P.comps.filter(c=>c.papel!=='pcb').map(c=>{const pos=P.perf.pos[c.id];const pl=r.parts.find(x=>x.c.id===c.id);
+    return `<li class="${selPart===c.id?'sel':''} ${pl?.bad?'bad':''}" data-tc="${c.id}"><span class="nm"><b>${esc(c.nome.split(/[ (]/)[0])}</b> <span class="small muted">${pos?'em '+holeName(pl.body.reduce((m,b)=>b[0]<m[0]||(b[0]===m[0]&&b[1]<m[1])?b:m,pl.body[0])[0],Math.min(...pl.body.map(b=>b[1])))+(pos.rot?` · ${pos.rot*90}°`:''):'fora da placa (liga por cabo)'}</span></span>
+      <button class="mini" data-pick="${c.id}">${selPart===c.id?'clique num furo…':pos?'mover':'colocar'}</button>
+      ${pos?`<button class="mini" data-rot="${c.id}" title="girar 90°">⟳</button><button class="mini ghost" data-off="${c.id}" title="tirar da placa">✕</button>`:''}
+      ${c.papel==='modulo'&&pos?`<button class="mini ghost" data-modo="${c.id}" title="como o módulo entra na placa">${pos.modo==='direto'?'módulo soldado direto':'barra de pinos + cabo'}</button>`:''}</li>`}).join('');
+
+  // passos
+  const fx=h=>holeName(h%C,(h/C)|0);
+  let steps='';
+  P.nos.forEach(n=>{const o=r.res[n.id];const net=r.nets.find(x=>x.n.id===n.id);const hex=hexOf(n.cor);
+    let li='';
+    if(o)o.paths.forEach(p=>runsOf(p,C).forEach(([a,b,k])=>{li+=`<li>${k<=1?`ponte de estanho ${fx(a)}–${fx(b)}`:`fio desencapado de <b>${fx(a)}</b> a <b>${fx(b)}</b> (${k} furos), solde nas pontas${k>3?' e no meio':''}`}</li>`}));
+    if(o)o.fails.forEach(([a,b])=>{li+=`<li><b>fio isolado por cima</b> de ${fx(a)} até ${fx(b)} (o caminho por baixo está bloqueado)</li>`});
+    (net?.off||[]).forEach(pt=>{const c=compById(pt.c);li+=pt.why==='fora'?`<li class="muted">${esc(c?.nome.split(/[ (]/)[0])} · ${esc(pt.p)}: peça fora da placa, chega por cabo</li>`:`<li style="color:var(--warn)">${esc(c?.nome.split(/[ (]/)[0])} · ${esc(pt.p)}: não achei esse pino na pinagem física da peça</li>`});
+    if(!li)return;
+    steps+=`<div class="perfnet" style="--c:${hex}"><b style="display:flex;gap:.4rem;align-items:center">${shapeIcon(n.tipo,hex)}${esc(n.nome)} <span class="small muted" style="font-weight:400">· fio ${n.cor}</span></b><ol class="runs">${li}</ol></div>`});
+  const placed=Object.keys(P.perf.pos).length;
+  const totalFail=Object.values(r.res||{}).reduce((s,o)=>s+o.fails.length,0);
+  box.innerHTML=`
+   <div class="row" style="justify-content:space-between">
+     <div class="row">${pcbs.length>1?`<select data-perfsel>${pcbs.map(c=>`<option value="${c.id}" ${c.id===P.perf.id?'selected':''}>${esc(c.nome)}</option>`).join('')}</select>`:`<b>${esc(r.perf.nome)}</b>`}<span class="small muted">${C} × ${R} furos</span></div>
+     <div class="row"><div class="seg" role="group" aria-label="Vista"><button data-view="cima" aria-pressed="${!flip}">vista de cima (peças)</button><button data-view="baixo" aria-pressed="${flip}">vista de baixo (solda)</button></div>
+     <button class="prim" data-auto>arrumar sozinho</button></div>
+   </div>
+   ${flip?'<div class="alert" style="margin-top:.7rem"><b>Placa virada.</b> Esta é a vista de quem segura o ferro: o que estava à esquerda agora está à direita (repare nas letras das colunas). Os nomes dos furos (C7, K12…) não mudam.</div>':''}
+   <div class="perfgrid">
+     <div><div class="perfwrap">${svg}</div>
+       <p class="small muted">Clique em “colocar/mover” e depois num furo (o canto de cima à esquerda da peça vai para lá). Setas do teclado também movem a peça selecionada.</p></div>
+     <div>
+       ${r.problems.map(t=>`<div class="alert err">${esc(t)}</div>`).join('')}
+       <h3>Peças na placa</h3><ul class="tray">${trayItems}</ul>
+       <p class="small muted">Módulos grandes (tela) costumam ficar fora: na placa entra só uma barra de pinos, e o módulo chega por um cabo curto. Assim a tela fica livre para ir na tampa.</p>
+       <h3 style="margin-top:.8rem">Mapa de solda ${placed?`<span class="small" style="font-weight:400;color:${totalFail?'var(--warn)':'var(--ok)'}">· ${totalFail?totalFail+' ligação(ões) precisam de fio por cima':'tudo passa por baixo'}</span>`:''}</h3>
+       <p class="small muted">Ordem: 1) solde as barras de pinos (fêmea para o ESP, assim ele sai da placa); 2) GND e 3V3; 3) sinais. Teste cada nó com o multímetro ao terminar.</p>
+       ${steps||'<p class="muted small">Coloque as peças para ver as trilhas.</p>'}
+     </div>
+   </div>`;
+}
+$('#perfBox').addEventListener('click',e=>{
+  const t=e.target.closest('button,[data-h],[data-part]');if(!t)return;
+  if(t.dataset.addperf){const c=compFromPreset(t.dataset.addperf);P.comps.push(c);P.perf={id:c.id,pos:{},view:'baixo'};const sk=autoArrange();renderComps();dirty();renderPerf();if(sk.length)flashPerf('Não couberam: '+sk.join(', ')+'. Ficam fora, ligadas por cabo.');return}
+  if(t.dataset.view){P.perf.view=t.dataset.view;dirty();renderPerf();return}
+  if(t.hasAttribute('data-auto')){const sk=autoArrange();dirty();renderPerf();if(sk.length)flashPerf('Não couberam: '+sk.join(', ')+'. Tente a placa maior, ou deixe como cabo.');return}
+  if(t.dataset.pick){selPart=selPart===t.dataset.pick?null:t.dataset.pick;renderPerf();return}
+  if(t.dataset.rot){const p=P.perf.pos[t.dataset.rot];p.rot=((p.rot|0)+1)%4;dirty();renderPerf();return}
+  if(t.dataset.off){delete P.perf.pos[t.dataset.off];if(selPart===t.dataset.off)selPart=null;dirty();renderPerf();return}
+  if(t.dataset.modo){const p=P.perf.pos[t.dataset.modo];p.modo=p.modo==='direto'?'conector':'direto';dirty();renderPerf();return}
+  if(t.dataset.part!==undefined&&!selPart){selPart=t.dataset.part;renderPerf();return}
+  if(t.dataset.h!==undefined&&selPart){const C=perfComp().cols|0;const h=+t.dataset.h;const old=P.perf.pos[selPart]||{};const c=compById(selPart);
+    P.perf.pos[selPart]={x:h%C,y:(h/C)|0,rot:old.rot||0,modo:old.modo||(c.papel==='placa'?undefined:'conector')};dirty();renderPerf();return}
+});
+$('#perfBox').addEventListener('change',e=>{if(e.target.dataset.perfsel!==undefined){P.perf.id=e.target.value;dirty();renderPerf()}});
+document.addEventListener('keydown',e=>{
+  if(step!==3||ligarModo!=='pcb'||!selPart||!P.perf?.pos[selPart]||/INPUT|TEXTAREA|SELECT/.test(e.target.tagName))return;
+  const d={ArrowLeft:[-1,0],ArrowRight:[1,0],ArrowUp:[0,-1],ArrowDown:[0,1]}[e.key];if(!d){if(e.key==='Escape'){selPart=null;renderPerf()}return}
+  e.preventDefault();const p=P.perf.pos[selPart];p.x+=(P.perf.view==='baixo'?-d[0]:d[0]);p.y+=d[1];dirty();renderPerf();
+});
+function flashPerf(t){const d=document.createElement('div');d.className='alert';d.textContent=t;$('#perfBox').prepend(d)}
+
+/* ============ ETAPA 4: case ============ */
+function effComp(c){
+  let L=num(c.L,10),W=num(c.W,10),H=num(c.H,5);let jan=c.janela?{w:num(c.janela.w),h:num(c.janela.h),dx:num(c.janela.dx),dy:num(c.janela.dy)}:null;let lat=c.lateral?{...c.lateral,w:num(c.lateral.w),h:num(c.lateral.h),z:num(c.lateral.z)}:null;
+  if(lat)lat.off=num(lat.off);
+  if(c.rot){[L,W]=[W,L];if(jan)jan={w:jan.h,h:jan.w,dx:-jan.dy,dy:jan.dx};if(lat){if(lat.lado==='esquerda'||lat.lado==='direita')lat.off=-lat.off;lat.lado={esquerda:'frente',frente:'direita',direita:'tras',tras:'esquerda'}[lat.lado]}}
+  return{c,L,W,H,jan,lat};
+}
+const ROT_LADO={esquerda:'frente',frente:'direita',direita:'tras',tras:'esquerda'};
+function perfForCase(){
+  const perf=perfComp();if(!perf||perf.incluir===false)return null;const pos=P.perf.pos||{};if(!Object.keys(pos).length)return null;
+  const onPerf=new Set();let hMax=0,lat=null;const C=perf.cols|0,R=perf.rows|0;
+  const ox=(num(perf.L)-(C-1)*HOLE)/2,oy=(num(perf.W)-(R-1)*HOLE)/2;
+  for(const[cid,p]of Object.entries(pos)){const c=compById(cid);if(!c)continue;
+    if(c.papel==='placa'||p.modo==='direto'){onPerf.add(cid);hMax=Math.max(hMax,num(c.H))}
+    if(c.papel==='placa'&&c.lateral&&!lat){
+      const pl=placeFP(c,p);const xs=pl.body.map(b=>b[0]),ys=pl.body.map(b=>b[1]);const gx=(Math.min(...xs)+Math.max(...xs))/2,gy=(Math.min(...ys)+Math.max(...ys))/2;
+      let lado='direita';for(let i=0;i<((p.rot|0)%4);i++)lado=ROT_LADO[lado];
+      const off=(lado==='esquerda'||lado==='direita')?(oy+gy*HOLE)-num(perf.W)/2:(ox+gx*HOLE)-num(perf.L)/2;
+      lat={lado,w:num(c.lateral.w),h:num(c.lateral.h),z:1.6+num(c.lateral.z),off};
+    }}
+  return{perf,onPerf,H:1.6+2+hMax,lat};
+}
+function layoutCase(){
+  if(!P)return null;const cfg=P.caseCfg;const pf=perfForCase();
+  const items=P.comps.filter(c=>c.incluir!==false&&(c.papel!=='pcb'||(pf&&c.id===pf.perf.id))&&!(pf&&pf.onPerf.has(c.id)))
+    .map(c=>pf&&c.id===pf.perf.id?effComp({...c,H:pf.H,lateral:pf.lat,janela:null}):effComp(c));
+  if(!items.length)return null;
+  const f=num(cfg.folga),m=num(cfg.margem),ch=num(cfg.canal),e=num(cfg.espacoFios),p=num(cfg.parede,2);
+  let IX,IY,IZ;const pl=[];
+  if(cfg.modo==='linha'){
+    IX=2*m+items.reduce((s,it)=>s+it.L+2*f,0)+ch*(items.length-1);IY=2*m+Math.max(...items.map(it=>it.W+2*f));IZ=Math.max(...items.map(it=>it.H))+e;
+    let x=p+m;items.forEach(it=>{pl.push({...it,x0:x+f,y0:p+(IY-it.W)/2,z0:p});x+=it.L+2*f+ch});
+  }else if(cfg.modo==='coluna'){
+    IY=2*m+items.reduce((s,it)=>s+it.W+2*f,0)+ch*(items.length-1);IX=2*m+Math.max(...items.map(it=>it.L+2*f));IZ=Math.max(...items.map(it=>it.H))+e;
+    let y=p+m;items.forEach(it=>{pl.push({...it,x0:p+(IX-it.L)/2,y0:y+f,z0:p});y+=it.W+2*f+ch});
+  }else{
+    IX=2*m+Math.max(...items.map(it=>it.L+2*f));IY=2*m+Math.max(...items.map(it=>it.W+2*f));
+    let z=p;items.forEach(it=>{pl.push({...it,x0:p+(IX-it.L)/2,y0:p+(IY-it.W)/2,z0:z});z+=it.H+e});IZ=z-p;
+  }
+  return{p,f,IX,IY,IZ,OX:IX+2*p,OY:IY+2*p,OZ:IZ+p,pl,cfg};
+}
+function buildBase(lay,gabarito=false){
+  const S=[],Hh=[];const{p,f,OX,OY,OZ,cfg}=lay;const fz=gabarito?1.2:p;const top=gabarito?fz+3:OZ;const g=num(cfg.guia,4),tg=1.2;
+  S.push([0,0,0,OX,OY,fz]);
+  S.push([0,0,0,OX,p,top],[0,OY-p,0,OX,OY,top],[0,0,0,p,OY,top],[OX-p,0,0,OX,OY,top]);
+  const dz=fz-p;
+  lay.pl.forEach((it,i)=>{
+    const x0=it.x0-f,x1=it.x0+it.L+f,y0=it.y0-f,y1=it.y0+it.W+f;
+    const onFloor=cfg.modo!=='empilhado'||i===0;
+    if(onFloor){
+      const gl=Math.min(6,(x1-x0)/3),gw=Math.min(6,(y1-y0)/3),z0=fz,z1=fz+g;
+      S.push([x0-tg,y0-tg,z0,x0+gl,y0,z1],[x0-tg,y0-tg,z0,x0,y0+gw,z1]);
+      S.push([x1-gl,y0-tg,z0,x1+tg,y0,z1],[x1,y0-tg,z0,x1+tg,y0+gw,z1]);
+      S.push([x0-tg,y1,z0,x0+gl,y1+tg,z1],[x0-tg,y1-gw,z0,x0,y1+tg,z1]);
+      S.push([x1-gl,y1,z0,x1+tg,y1+tg,z1],[x1,y1-gw,z0,x1+tg,y1+tg,z1]);
+    }else if(!gabarito){
+      const zt=it.z0,zb=zt-1.6;
+      S.push([x0,p,zb,x1,y0+f+1.5,zt],[x0,y1-f-1.5,zb,x1,OY-p,zt]);
+    }
+    if(it.lat&&it.lat.lado&&!gabarito){
+      const l=it.lat;const zc=it.z0+dz+l.z;const zz0=zc-l.h/2,zz1=zc+l.h/2;
+      const cy=it.y0+it.W/2+(l.off||0),cx=it.x0+it.L/2+(l.off||0);
+      if(l.lado==='esquerda')Hh.push([-1,cy-l.w/2,zz0,p+1,cy+l.w/2,zz1]);
+      if(l.lado==='direita')Hh.push([OX-p-1,cy-l.w/2,zz0,OX+1,cy+l.w/2,zz1]);
+      if(l.lado==='frente')Hh.push([cx-l.w/2,-1,zz0,cx+l.w/2,p+1,zz1]);
+      if(l.lado==='tras')Hh.push([cx-l.w/2,OY-p-1,zz0,cx+l.w/2,OY+1,zz1]);
+    }
+  });
+  return{S,Hh};
+}
+function buildLid(lay){
+  const{p,OX,OY,cfg}=lay;const t=num(cfg.tampa,2),lh=num(cfg.labio,3),clr=.3,tr=1.2;const S=[],Hh=[];
+  S.push([0,0,0,OX,OY,t]);
+  if(lh>0){const ax0=p+clr,ax1=OX-p-clr,ay0=p+clr,ay1=OY-p-clr;
+    S.push([ax0,ay0,t,ax1,ay0+tr,t+lh],[ax0,ay1-tr,t,ax1,ay1,t+lh],[ax0,ay0,t,ax0+tr,ay1,t+lh],[ax1-tr,ay0,t,ax1,ay1,t+lh]);}
+  lay.pl.forEach((it,i)=>{
+    if(!it.jan)return;if(cfg.modo==='empilhado'&&i!==lay.pl.length-1)return;
+    const cx=it.x0+it.L/2+it.jan.dx,cy=OY-(it.y0+it.W/2+it.jan.dy);
+    Hh.push([cx-it.jan.w/2,cy-it.jan.h/2,-1,cx+it.jan.w/2,cy+it.jan.h/2,t+lh+1]);
+  });
+  return{S,Hh};
+}
+/* união exata de caixas alinhadas aos eixos: grade com todas as coordenadas, malha fechada (boa para fatiador) */
+function meshUnion(S,Hh){
+  const R=v=>Math.round(v*1000)/1000;const norm=b=>[Math.min(b[0],b[3]),Math.min(b[1],b[4]),Math.min(b[2],b[5]),Math.max(b[0],b[3]),Math.max(b[1],b[4]),Math.max(b[2],b[5])].map(R);
+  S=S.map(norm).filter(b=>b[3]>b[0]&&b[4]>b[1]&&b[5]>b[2]);Hh=Hh.map(norm).filter(b=>b[3]>b[0]&&b[4]>b[1]&&b[5]>b[2]);
+  const sx=new Set(),sy=new Set(),sz=new Set();
+  [...S,...Hh].forEach(b=>{sx.add(b[0]);sx.add(b[3]);sy.add(b[1]);sy.add(b[4]);sz.add(b[2]);sz.add(b[5])});
+  const xs=[...sx].sort((a,b)=>a-b),ys=[...sy].sort((a,b)=>a-b),zs=[...sz].sort((a,b)=>a-b);
+  const ix=new Map(xs.map((v,i)=>[v,i])),iy=new Map(ys.map((v,i)=>[v,i])),iz=new Map(zs.map((v,i)=>[v,i]));
+  const nx=xs.length-1,ny=ys.length-1,nz=zs.length-1;if(nx<1||ny<1||nz<1)return new Float32Array(0);
+  const G=new Uint8Array(nx*ny*nz);const id=(i,j,k)=>(k*ny+j)*nx+i;
+  const fill=(b,v)=>{const i0=ix.get(b[0]),i1=ix.get(b[3]),j0=iy.get(b[1]),j1=iy.get(b[4]),k0=iz.get(b[2]),k1=iz.get(b[5]);
+    for(let k=k0;k<k1;k++)for(let j=j0;j<j1;j++)for(let i=i0;i<i1;i++)G[id(i,j,k)]=v};
+  S.forEach(b=>fill(b,1));Hh.forEach(b=>fill(b,0));
+  const at=(i,j,k)=>i<0||j<0||k<0||i>=nx||j>=ny||k>=nz?0:G[id(i,j,k)];
+  const out=[];const q=(a,b,c,d,flip)=>{if(flip)out.push(...a,...d,...c,...a,...c,...b);else out.push(...a,...b,...c,...a,...c,...d)};
+  for(let k=0;k<nz;k++)for(let j=0;j<ny;j++)for(let i=0;i<nx;i++){
+    if(!G[id(i,j,k)])continue;
+    const x0=xs[i],x1=xs[i+1],y0=ys[j],y1=ys[j+1],z0=zs[k],z1=zs[k+1];
+    if(!at(i+1,j,k))q([x1,y0,z0],[x1,y1,z0],[x1,y1,z1],[x1,y0,z1],false);
+    if(!at(i-1,j,k))q([x0,y0,z0],[x0,y1,z0],[x0,y1,z1],[x0,y0,z1],true);
+    if(!at(i,j+1,k))q([x0,y1,z0],[x0,y1,z1],[x1,y1,z1],[x1,y1,z0],false);
+    if(!at(i,j-1,k))q([x0,y0,z0],[x0,y0,z1],[x1,y0,z1],[x1,y0,z0],true);
+    if(!at(i,j,k+1))q([x0,y0,z1],[x1,y0,z1],[x1,y1,z1],[x0,y1,z1],false);
+    if(!at(i,j,k-1))q([x0,y0,z0],[x1,y0,z0],[x1,y1,z0],[x0,y1,z0],true);
+  }
+  return new Float32Array(out);
+}
+function stlBinary(pos,name){
+  const n=pos.length/9;const buf=new ArrayBuffer(84+n*50);const dv=new DataView(buf);
+  const hdr=('no a no - '+name).slice(0,79);for(let i=0;i<hdr.length;i++)dv.setUint8(i,hdr.charCodeAt(i)&127);
+  dv.setUint32(80,n,true);let o=84;
+  for(let t=0;t<n;t++){const b=t*9;const ax=pos[b],ay=pos[b+1],az=pos[b+2];const ux=pos[b+3]-ax,uy=pos[b+4]-ay,uz=pos[b+5]-az,vx=pos[b+6]-ax,vy=pos[b+7]-ay,vz=pos[b+8]-az;
+    let nx=uy*vz-uz*vy,ny=uz*vx-ux*vz,nz=ux*vy-uy*vx;const l=Math.hypot(nx,ny,nz)||1;
+    dv.setFloat32(o,nx/l,true);dv.setFloat32(o+4,ny/l,true);dv.setFloat32(o+8,nz/l,true);o+=12;
+    for(let v=0;v<9;v++){dv.setFloat32(o,pos[b+v],true);o+=4}o+=2;}
+  return buf;
+}
+
+/* parâmetros e lista */
+const PARAMS=[['parede','parede (mm)',.4],['folga','folga em volta de cada placa',.1],['margem','margem até a parede',.5],['canal','canal de fios entre peças',.5],['espacoFios','espaço acima (fios/conectores)',.5],['guia','altura das guias',.5],['tampa','espessura da tampa',.2],['labio','encaixe da tampa (lábio)',.5]];
+function renderCaseForm(){
+  document.querySelectorAll('#layouts button').forEach(b=>b.setAttribute('aria-pressed',b.dataset.modo===P.caseCfg.modo));
+  $('#params').innerHTML=PARAMS.filter(([k])=>!(k==='canal'&&P.caseCfg.modo==='empilhado')).map(([k,l,s])=>`<label>${l==='parede (mm)'?'parede':l}<input type="number" step="${s}" min="0" data-cp="${k}" value="${P.caseCfg[k]}"></label>`).join('');
+  const pf=perfForCase();
+  $('#orderList').innerHTML=P.comps.map((c,i)=>pf&&pf.onPerf.has(c.id)?`<li class="small muted">↳ ${esc(c.nome)}: soldado na ${esc(pf.perf.nome)} (entra junto com ela)</li>`:c.papel==='pcb'&&!(pf&&pf.perf.id===c.id)?`<li class="small muted">${esc(c.nome)}: sem peças posicionadas, fica fora do case</li>`:`<li data-id="${c.id}"><input type="checkbox" data-o="inc" ${c.incluir!==false?'checked':''} aria-label="incluir no case"><span class="nm">${esc(c.nome)} <span class="small muted">${fmt(c.rot?c.W:c.L)}×${fmt(c.rot?c.L:c.W)}×${fmt(c.H)}</span></span>
+   <button class="mini" data-o="rot" title="girar 90°">⟳ girar</button><button class="mini" data-o="up" ${i===0?'disabled':''} aria-label="subir">↑</button><button class="mini" data-o="dn" ${i===P.comps.length-1?'disabled':''} aria-label="descer">↓</button></li>`).join('')+
+   (P.caseCfg.modo==='empilhado'?'<li class="small muted">No sanduíche, o primeiro da lista fica embaixo e o último encosta na tampa (a janela da tela vem dele).</li>':'');
+}
+$('#layouts').onclick=e=>{const b=e.target.closest('button');if(!b)return;P.caseCfg.modo=b.dataset.modo;renderCase();dirty()};
+$('#params').addEventListener('input',e=>{const k=e.target.dataset.cp;if(!k)return;P.caseCfg[k]=num(e.target.value,P.caseCfg[k]);scheduleCase();dirty()});
+$('#orderList').addEventListener('click',e=>{
+  const li=e.target.closest('li[data-id]');const o=e.target.dataset.o;if(!li||!o||o==='inc')return;const i=P.comps.findIndex(c=>c.id===li.dataset.id);const c=P.comps[i];
+  if(o==='rot')c.rot=!c.rot;if(o==='up'&&i>0)[P.comps[i-1],P.comps[i]]=[P.comps[i],P.comps[i-1]];if(o==='dn'&&i<P.comps.length-1)[P.comps[i+1],P.comps[i]]=[P.comps[i],P.comps[i+1]];
+  renderCase();dirty();
+});
+$('#orderList').addEventListener('change',e=>{if(e.target.dataset.o!=='inc')return;const c=compById(e.target.closest('li').dataset.id);c.incluir=e.target.checked;scheduleCase();dirty()});
+let caseTimer=null;const scheduleCase=()=>{clearTimeout(caseTimer);caseTimer=setTimeout(updateCase,250)};
+function renderCase(){
+  renderCaseForm();
+  const a=P.analise;$('#caseTips').innerHTML=a&&a.caseDicas&&a.caseDicas.length?`<h3 style="margin-top:.8rem">Dicas para este projeto (IA)</h3><ul class="small" style="margin:.3rem 0 0 1.1rem;padding:0">${a.caseDicas.map(t=>`<li>${esc(t)}</li>`).join('')}</ul>`:'';
+  initThree().then(updateCase);
+}
+
+/* three.js */
+let T=null;
+function loadScript(src){return new Promise((res,rej)=>{const s=document.createElement('script');s.src=src;s.onload=res;s.onerror=rej;document.head.appendChild(s)})}
+async function initThree(){
+  if(T)return T;
+  try{
+    if(!window.THREE)await loadScript('https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js');
+    if(!THREE.OrbitControls)await loadScript('https://cdn.jsdelivr.net/npm/three@0.128.0/examples/js/controls/OrbitControls.js');
+  }catch(e){$('#viewMsg').textContent='Não consegui carregar a visualização 3D. Os arquivos .stl continuam funcionando.';return null}
+  const el=$('#view');const r=new THREE.WebGLRenderer({antialias:true,alpha:true});r.setPixelRatio(Math.min(2,devicePixelRatio));el.prepend(r.domElement);
+  const scene=new THREE.Scene();const cam=new THREE.PerspectiveCamera(35,1,1,5000);cam.up.set(0,0,1);
+  scene.add(new THREE.HemisphereLight(0xdfe9ee,0x1a2226,.9));const dl=new THREE.DirectionalLight(0xffffff,.7);dl.position.set(80,-120,200);scene.add(dl);
+  const ctr=new THREE.OrbitControls(cam,r.domElement);ctr.enableDamping=true;
+  const root=new THREE.Group();scene.add(root);
+  const size=()=>{const w=el.clientWidth,h=el.clientHeight;r.setSize(w,h,false);cam.aspect=w/h;cam.updateProjectionMatrix()};
+  new ResizeObserver(size).observe(el);size();
+  (function loop(){requestAnimationFrame(loop);ctr.update();r.render(scene,cam)})();
+  T={r,scene,cam,ctr,root,fitted:false};$('#viewMsg').textContent='arraste para girar · role para aproximar';
+  return T;
+}
+function geoFrom(pos){const g=new THREE.BufferGeometry();g.setAttribute('position',new THREE.BufferAttribute(pos,3));g.computeVertexNormals();return g}
+let lastKey='';
+function updateCase(){
+  const lay=layoutCase();
+  if(!lay){$('#dimsOut').textContent='—';if(T)T.root.clear();return}
+  $('#dimsOut').textContent=`${fmt(lay.OX)} × ${fmt(lay.OY)} × ${fmt(lay.OZ)} mm`;
+  if(!T)return;
+  const base=buildBase(lay),lid=buildLid(lay);
+  const bp=meshUnion(base.S,base.Hh),lp=meshUnion(lid.S,lid.Hh);
+  T.root.clear();
+  const xr=$('#xray').checked;
+  const mb=new THREE.Mesh(geoFrom(bp),new THREE.MeshStandardMaterial({color:0xd8d2c4,roughness:.75,transparent:xr,opacity:xr?.45:1,side:THREE.DoubleSide,depthWrite:!xr}));
+  T.root.add(mb);
+  const lg=new THREE.Group();const ml=new THREE.Mesh(geoFrom(lp),new THREE.MeshStandardMaterial({color:0x8fd6c4,roughness:.3,transparent:true,opacity:.42,side:THREE.DoubleSide,depthWrite:false}));
+  lg.add(ml);lg.rotation.x=Math.PI;lg.position.set(0,lay.OY,lay.OZ+num(lay.cfg.tampa,2)+num($('#explode').value,25));T.root.add(lg);
+  lay.pl.forEach(it=>{
+    const g=new THREE.BoxGeometry(it.L,it.W,it.H);const isB=it.c.papel==='placa';
+    const m=new THREE.Mesh(g,new THREE.MeshStandardMaterial({color:isB?0x24292c:0x1d4f7a,roughness:.6}));m.position.set(it.x0+it.L/2,it.y0+it.W/2,it.z0+it.H/2);T.root.add(m);
+    const ed=new THREE.LineSegments(new THREE.EdgesGeometry(g),new THREE.LineBasicMaterial({color:isB?0xe8a066:0x4ea8ff}));ed.position.copy(m.position);T.root.add(ed);
+    if(it.jan){const pg=new THREE.PlaneGeometry(it.jan.w,it.jan.h);const pm=new THREE.Mesh(pg,new THREE.MeshBasicMaterial({color:0x7ee0ff,transparent:true,opacity:.6}));pm.position.set(it.x0+it.L/2+it.jan.dx,it.y0+it.W/2+it.jan.dy,it.z0+it.H+.05);T.root.add(pm)}
+  });
+  const key=[lay.OX,lay.OY,lay.OZ].map(v=>Math.round(v/10)).join();
+  if(key!==lastKey){lastKey=key;const c=new THREE.Vector3(lay.OX/2,lay.OY/2,lay.OZ/2);const d=Math.max(lay.OX,lay.OY,lay.OZ+40)*2.1;T.ctr.target.copy(c);T.cam.position.set(c.x+d*.55,c.y-d*.8,c.z+d*.65);T.cam.near=1;T.cam.far=d*20;T.cam.updateProjectionMatrix()}
+}
+$('#xray').onchange=updateCase;$('#explode').oninput=updateCase;
+
+document.querySelectorAll('[data-stl]').forEach(b=>b.onclick=async()=>{
+  const kind=b.dataset.stl;const lay=layoutCase();if(!lay){$('#stlMsg').textContent='Adicione peças primeiro.';return}
+  const parts=kind==='tampa'?buildLid(lay):buildBase(lay,kind==='gabarito');
+  const pos=meshUnion(parts.S,parts.Hh);const buf=stlBinary(pos,kind);
+  const slug=P.nome.toLowerCase().normalize('NFD').replace(/[̀-ͯ]/g,'').replace(/[^a-z0-9]+/g,'-').replace(/^-|-$/g,'')||'case';
+  const filename=`${slug}-${kind}.stl`;
+  try{
+    const dl=window.claude?.use?await claude.use('downloads'):null;
+    const blob=new Blob([buf],{type:'model/stl'});
+    if(dl)await dl.save({filename,data:blob});
+    else{const a=document.createElement('a');a.href=URL.createObjectURL(blob);a.download=filename;document.body.appendChild(a);a.click();setTimeout(()=>{URL.revokeObjectURL(a.href);a.remove()},1000)}
+    $('#stlMsg').textContent=`${filename} pronto (${(pos.length/9)|0} triângulos). Abra no fatiador (Cura, PrusaSlicer, Bambu Studio).`;
+  }catch(e){$('#stlMsg').textContent='Download cancelado ou recusado: '+(e.message||e.code||e)}
+});
+
+/* ============ chat ============ */
+$('#chatBtn').onclick=()=>{$('#chat').hidden=false;renderChat();$('#chatIn').focus()};
+$('#chatClose').onclick=()=>$('#chat').hidden=true;
+function md(t){let h=esc(t).replace(/\*\*(.+?)\*\*/g,'<b>$1</b>').replace(/`([^`]+)`/g,'<span class="pin">$1</span>');
+  const lines=h.split('\n');let out='',inL=false;for(const l of lines){const m=l.match(/^\s*(?:[-*•]|\d+[.)])\s+(.*)/);if(m){if(!inL){out+='<ul>';inL=true}out+=`<li>${m[1]}</li>`}else{if(inL){out+='</ul>';inL=false}out+=l?`<p>${l}</p>`:''}}if(inL)out+='</ul>';return out}
+function renderChat(){
+  const log=$('#chatLog');
+  log.innerHTML=P.chat.length?P.chat.map(m=>`<div class="msg ${m.role==='user'?'u':'a'}">${m.role==='user'?esc(m.content):md(m.content)}</div>`).join(''):'<p class="muted small">Pergunte o que quiser sobre este projeto: a IA vê as peças, os nós e o case. Ex.: “qual fio sai primeiro?”, “dá para usar o C3 SuperMini aqui?”, “o case cabe numa mão?”</p>';
+  log.scrollTop=log.scrollHeight;
+}
+$('#chatIn').addEventListener('keydown',e=>{if(e.key==='Enter'&&!e.shiftKey){e.preventDefault();$('#chatForm').requestSubmit()}});
+$('#chatForm').onsubmit=async e=>{
+  e.preventDefault();const q=$('#chatIn').value.trim();if(!q)return;
+  const sample=await getSample();if(!sample){P.chat.push({role:'user',content:q},{role:'assistant',content:'A IA não está disponível nesta visualização. Abra pelo link do Claude.'});renderChat();return}
+  $('#chatIn').value='';P.chat.push({role:'user',content:q});renderChat();
+  const ctx=`Você é tutora de eletrônica e impressão 3D de uma pessoa que monta projetos ESP32. Responda em português do Brasil, curto, didático, com passos numerados quando for procedimento. Se não souber algo do circuito dela, diga e peça a informação.\n\nPROJETO (JSON):\n${JSON.stringify(projectContext())}\n\nCÓDIGO (início):\n${(P.codigo||'(sem código)').slice(0,8000)}\n\n`;
+  const hist=P.chat.slice(-12).map((m,i,arr)=>({role:m.role,content:m.content}));
+  if(hist[0].role!=='user')hist.shift();
+  hist[0]={role:'user',content:ctx+'PERGUNTA: '+hist[0].content};
+  const div=document.createElement('div');div.className='msg a';div.textContent='Pensando…';$('#chatLog').appendChild(div);
+  try{
+    const r=await sample(hist,{cache:false,modelTier:'default',onText:({text})=>{div.innerHTML=md(text||'')}});
+    P.chat.push({role:'assistant',content:r.text});dirty();
+  }catch(err){P.chat.push({role:'assistant',content:err.code==='rate_limited'?'Muitas perguntas seguidas. Espere um pouco.':'Não consegui responder agora ('+(err.message||err.code)+').'})}
+  renderChat();
+};
+
+/* ============ início ============ */
+function renderAll(){
+  $('#code').value=P.codigo||'';renderComps();renderPinsFound();renderThumbs();renderAnalysis();
+  if(step===2)renderNets();if(step===3)renderLigar();if(step===4)renderCase();
+  if(!$('#chat').hidden)renderChat();
+}
+(async function start(){
+  const h=location.hash.match(/etapa-(\d)/);step=h?+h[1]:1;
+  P=exampleProject();renderAll();go(step);
+  $('#saveStatus').textContent='conectando…';
+  renderPresetSel();renderMat();
+  await initStore();
+  await loadLibrary();renderPresetSel();renderMat();
+  try{
+    const list=await listProjects();
+    if(list.length){list.sort((a,b)=>(b.criado||0)-(a.criado||0));const p=await loadProject(list[0].id);if(p)P=p}
+    else{await saveProject(P)}
+  }catch(e){console.warn(e)}
+  await refreshProjSel();renderAll();go(step);
+  $('#saveStatus').textContent=store.mode==='db'?'salvo na sua conta':'salvando só neste navegador';
+})();
+</script>
+</body>
+</html>
