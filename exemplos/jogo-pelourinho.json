@@ -6,26 +6,26 @@
     "id": "c6idghio",
     "pos": {
       "c1djtmtr": {
-        "x": 6,
-        "y": 2,
-        "rot": 3
+        "x": 17,
+        "y": 1,
+        "rot": 0
       },
       "ctwmmbio": {
-        "x": 18,
-        "y": 1,
-        "rot": 1,
+        "x": 14,
+        "y": 14,
+        "rot": 0,
         "modo": "conector"
       },
       "crkw9o8e": {
-        "x": 1,
-        "y": 3,
-        "rot": 2,
+        "x": 11,
+        "y": 4,
+        "rot": 0,
         "modo": "direto"
       },
       "ciy6idd5": {
-        "x": 2,
-        "y": 7,
-        "rot": 2,
+        "x": 8,
+        "y": 1,
+        "rot": 0,
         "modo": "direto"
       }
     },
