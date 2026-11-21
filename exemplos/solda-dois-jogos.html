@@ -1,0 +1,189 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>Soldando o jogo — passo a passo</title>
+<style>
+:root{--bg:#101418;--pn:#1a2027;--ln:#2c343d;--tx:#eef1f4;--mu:#9aa5b1;--cu:#c98a4b;--board:#1d3a2c;--ac:#61bf99}
+*{box-sizing:border-box}
+body{margin:0;background:var(--bg);color:var(--tx);font:17px/1.5 system-ui,-apple-system,"Segoe UI",Roboto,sans-serif}
+header{padding:18px 18px 8px;max-width:980px;margin:0 auto}
+h1{font-size:22px;margin:0 0 4px}
+.sub{color:var(--mu);margin:0;font-size:15px}
+.bar{display:flex;gap:4px;flex-wrap:wrap;margin:14px 0 0}
+.bar button{width:30px;height:30px;border-radius:8px;border:1px solid var(--ln);background:var(--pn);color:var(--mu);font:600 13px system-ui;cursor:pointer;padding:0}
+.bar button.on{outline:2px solid var(--tx);color:var(--tx)}
+.bar button.ok{background:#21443a;color:#bff3dc;border-color:#2f6b58}
+main{max-width:980px;margin:0 auto;padding:8px 18px 120px}
+.step{display:none}.step.on{display:block}
+.kick{color:var(--mu);font-size:14px;margin:6px 0 2px}
+h2{font-size:24px;margin:0 0 10px;line-height:1.25}
+.fig{background:#0b0e11;border:1px solid var(--ln);border-radius:14px;padding:10px;margin:10px 0}
+.fig svg{width:100%;height:auto;display:block}
+.cap{color:var(--mu);font-size:14px;margin:6px 4px 2px}
+.do{background:var(--pn);border:1px solid var(--ln);border-radius:14px;padding:14px 16px;margin:12px 0}
+.do ol,.do ul{margin:6px 0 0;padding-left:22px}.do li{margin:6px 0}
+.wire{display:flex;align-items:center;gap:12px;flex-wrap:wrap;font-size:19px;margin:4px 0 8px}
+.sw{display:inline-block;width:46px;height:10px;border-radius:5px;vertical-align:middle}
+.endp{display:grid;grid-template-columns:auto 1fr;gap:8px 12px;align-items:start;margin-top:8px}
+.tag{font:700 13px system-ui;border-radius:999px;padding:3px 10px;color:#0b0e11}
+.two{display:grid;grid-template-columns:1fr 1fr;gap:10px}
+@media(max-width:700px){.two{grid-template-columns:1fr}body{font-size:16px}h2{font-size:21px}}
+.nav{position:fixed;left:0;right:0;bottom:0;background:rgba(16,20,24,.96);border-top:1px solid var(--ln);padding:10px 14px;display:flex;gap:10px;justify-content:center;align-items:center}
+.nav button{font:600 16px system-ui;border-radius:12px;padding:12px 18px;border:1px solid var(--ln);background:var(--pn);color:var(--tx);cursor:pointer}
+.nav .feito{background:var(--ac);color:#08241a;border-color:var(--ac)}
+.nav .feito.done{background:#21443a;color:#bff3dc;border-color:#2f6b58}
+.nav button:focus-visible,.bar button:focus-visible{outline:3px solid #fff;outline-offset:2px}
+table{border-collapse:collapse;width:100%;font-size:15px}td,th{border-bottom:1px solid var(--ln);padding:7px 6px;text-align:left;vertical-align:top}
+.warn{border-left:4px solid #ffd23f;padding:8px 12px;background:#2a2614;border-radius:6px;margin:10px 0}
+.leg{display:flex;gap:16px;flex-wrap:wrap;color:var(--mu);font-size:14px;margin:4px}
+@keyframes pulse{0%,100%{opacity:1}50%{opacity:.35}}
+.pulse{animation:pulse 1.4s ease-in-out infinite}
+@media(prefers-reduced-motion:reduce){.pulse{animation:none}}
+</style>
+</head>
+<body>
+<header>
+<h1>Soldando o jogo, uma ligação de cada vez</h1>
+<p class="sub">ESP32 + tela 1,8" + 2 botões na placa 5×10. Cada passo mostra só o que fazer agora.</p>
+<div class="bar" id="bar" aria-label="Passos"></div>
+</header>
+<main id="main"></main>
+<div class="nav">
+<button id="prev">← Voltar</button>
+<button id="done" class="feito">Fiz este passo ✓</button>
+<button id="next">Próximo →</button>
+</div>
+<script>
+const D={"C": 34, "R": 15, "pads": [{"x": 18, "y": 1, "part": "esp", "lab": "EN"}, {"x": 17, "y": 1, "part": "esp", "lab": "VP"}, {"x": 16, "y": 1, "part": "esp", "lab": "VN"}, {"x": 15, "y": 1, "part": "esp", "lab": "D34"}, {"x": 14, "y": 1, "part": "esp", "lab": "D35"}, {"x": 13, "y": 1, "part": "esp", "lab": "D32"}, {"x": 12, "y": 1, "part": "esp", "lab": "D33"}, {"x": 11, "y": 1, "part": "esp", "lab": "D25"}, {"x": 10, "y": 1, "part": "esp", "lab": "D26"}, {"x": 9, "y": 1, "part": "esp", "lab": "D27"}, {"x": 8, "y": 1, "part": "esp", "lab": "D14"}, {"x": 7, "y": 1, "part": "esp", "lab": "D12"}, {"x": 6, "y": 1, "part": "esp", "lab": "D13"}, {"x": 5, "y": 1, "part": "esp", "lab": "GND"}, {"x": 4, "y": 1, "part": "esp", "lab": "VIN"}, {"x": 18, "y": 11, "part": "esp", "lab": "D23"}, {"x": 17, "y": 11, "part": "esp", "lab": "D22"}, {"x": 16, "y": 11, "part": "esp", "lab": "TX0"}, {"x": 15, "y": 11, "part": "esp", "lab": "RX0"}, {"x": 14, "y": 11, "part": "esp", "lab": "D21"}, {"x": 13, "y": 11, "part": "esp", "lab": "D19"}, {"x": 12, "y": 11, "part": "esp", "lab": "D18"}, {"x": 11, "y": 11, "part": "esp", "lab": "D5"}, {"x": 10, "y": 11, "part": "esp", "lab": "TX2"}, {"x": 9, "y": 11, "part": "esp", "lab": "RX2"}, {"x": 8, "y": 11, "part": "esp", "lab": "D4"}, {"x": 7, "y": 11, "part": "esp", "lab": "D2"}, {"x": 6, "y": 11, "part": "esp", "lab": "D15"}, {"x": 5, "y": 11, "part": "esp", "lab": "GND"}, {"x": 4, "y": 11, "part": "esp", "lab": "3V3"}, {"x": 22, "y": 6, "part": "tft", "lab": "VCC"}, {"x": 22, "y": 7, "part": "tft", "lab": "GND"}, {"x": 22, "y": 8, "part": "tft", "lab": "CS"}, {"x": 22, "y": 9, "part": "tft", "lab": "RESET"}, {"x": 22, "y": 10, "part": "tft", "lab": "A0"}, {"x": 22, "y": 11, "part": "tft", "lab": "SDA"}, {"x": 22, "y": 12, "part": "tft", "lab": "SCK"}, {"x": 22, "y": 13, "part": "tft", "lab": "LED"}, {"x": 11, "y": 12, "part": "btA", "lab": "sinal"}, {"x": 8, "y": 14, "part": "btA", "lab": "GND"}, {"x": 11, "y": 14, "part": "btA", "lab": ""}, {"x": 8, "y": 12, "part": "btA", "lab": ""}, {"x": 3, "y": 12, "part": "btB", "lab": "sinal"}, {"x": 0, "y": 14, "part": "btB", "lab": "GND"}, {"x": 3, "y": 14, "part": "btB", "lab": ""}, {"x": 0, "y": 12, "part": "btB", "lab": ""}], "wires": [{"net": "3V3", "cor": "#ff5a4e", "corNome": "vermelho", "tipo": "energia", "a": [4, 11], "b": [22, 6], "da": "pino <b>3V3</b> do ESP (fileira de baixo, 1º a partir da USB)", "db": "pino <b>VCC</b> da barra da tela (1º de cima para baixo)", "cm": 8, "why": "leva energia (3,3 V) do ESP para a tela."}, {"net": "3V3", "cor": "#ff5a4e", "corNome": "vermelho", "tipo": "energia", "a": [22, 6], "b": [22, 13], "da": "pino <b>VCC</b> da barra da tela (1º de cima para baixo)", "db": "pino <b>LED</b> da barra da tela (8º de cima para baixo)", "cm": 4, "why": "acende a luz de fundo da tela. Os dois pinos ficam na mesma barra: é um fio curtinho."}, {"net": "GND", "cor": "#c9ced6", "corNome": "preto", "tipo": "terra", "a": [5, 11], "b": [22, 7], "da": "pino <b>GND</b> do ESP (fileira de baixo, 2º a partir da USB)", "db": "pino <b>GND</b> da barra da tela (2º de cima para baixo)", "cm": 7, "why": "o “volta” da energia da tela (terra)."}, {"net": "GND", "cor": "#c9ced6", "corNome": "preto", "tipo": "terra", "a": [5, 11], "b": [0, 14], "da": "pino <b>GND</b> do ESP (fileira de baixo, 2º a partir da USB)", "db": "perna <b>do GND</b> do botão B", "cm": 4, "why": "o botão B, quando apertado, liga o pino D15 ao terra."}, {"net": "GND", "cor": "#c9ced6", "corNome": "preto", "tipo": "terra", "a": [0, 14], "b": [8, 14], "da": "perna <b>do GND</b> do botão B", "db": "perna <b>do GND</b> do botão A", "cm": 4, "why": "o terra continua do botão B para o botão A."}, {"net": "SCK", "cor": "#ffd23f", "corNome": "amarelo", "tipo": "sinal", "a": [12, 11], "b": [22, 12], "da": "pino <b>D18</b> do ESP (fileira de baixo, 9º a partir da USB)", "db": "pino <b>SCK</b> da barra da tela (7º de cima para baixo)", "cm": 5, "why": "relógio da tela: marca o ritmo dos dados."}, {"net": "SDA", "cor": "#3ddc97", "corNome": "verde", "tipo": "sinal", "a": [18, 11], "b": [22, 11], "da": "pino <b>D23</b> do ESP (fileira de baixo, 15º a partir da USB)", "db": "pino <b>SDA</b> da barra da tela (6º de cima para baixo)", "cm": 4, "why": "os dados da imagem vão por aqui."}, {"net": "CS", "cor": "#4da3ff", "corNome": "azul", "tipo": "sinal", "a": [8, 11], "b": [22, 8], "da": "pino <b>D4</b> do ESP (fileira de baixo, 5º a partir da USB)", "db": "pino <b>CS</b> da barra da tela (3º de cima para baixo)", "cm": 6, "why": "avisa a tela “agora é com você”."}, {"net": "A0", "cor": "#b28dff", "corNome": "roxo", "tipo": "sinal", "a": [14, 11], "b": [22, 10], "da": "pino <b>D21</b> do ESP (fileira de baixo, 11º a partir da USB)", "db": "pino <b>A0</b> da barra da tela (5º de cima para baixo)", "cm": 4, "why": "diz se o que chega é comando ou desenho."}, {"net": "RESET", "cor": "#ff9f43", "corNome": "laranja", "tipo": "sinal", "a": [11, 11], "b": [22, 9], "da": "pino <b>D5</b> do ESP (fileira de baixo, 8º a partir da USB)", "db": "pino <b>RESET</b> da barra da tela (4º de cima para baixo)", "cm": 5, "why": "reinicia a tela quando o jogo liga."}, {"net": "botão A", "cor": "#ffffff", "corNome": "branco", "tipo": "sinal", "a": [9, 11], "b": [11, 12], "da": "pino <b>RX2</b> do ESP (fileira de baixo, 6º a partir da USB)", "db": "perna <b>do sinal</b> do botão A", "cm": 4, "why": "o jogo lê o botão A no pino 16 (RX2)."}, {"net": "botão B", "cor": "#ff7ac8", "corNome": "rosa", "tipo": "sinal", "a": [6, 11], "b": [3, 12], "da": "pino <b>D15</b> do ESP (fileira de baixo, 3º a partir da USB)", "db": "perna <b>do sinal</b> do botão B", "cm": 4, "why": "o jogo lê o botão B no pino 15 (D15)."}]};
+const C=D.C,R=D.R,S=26,M=34;
+const KEY='noano-solda-jogo-v1';
+let feitos={};try{feitos=JSON.parse(localStorage.getItem(KEY)||'{}')}catch(e){}
+const salva=()=>{try{localStorage.setItem(KEY,JSON.stringify(feitos))}catch(e){}};
+const shape=(t,x,y,r,fill,stroke,sw)=>t==='terra'?`<rect x="${x-r}" y="${y-r}" width="${2*r}" height="${2*r}" fill="${fill}" stroke="${stroke}" stroke-width="${sw}"/>`:t==='sinal'?`<path d="M${x} ${y-r*1.3}L${x+r*1.3} ${y}L${x} ${y+r*1.3}L${x-r*1.3} ${y}Z" fill="${fill}" stroke="${stroke}" stroke-width="${sw}"/>`:`<circle cx="${x}" cy="${y}" r="${r}" fill="${fill}" stroke="${stroke}" stroke-width="${sw}"/>`;
+/* vista: 'cima' (como a foto) ou 'baixo' (placa virada como página de livro: esquerda e direita trocam) */
+function placa(o){
+  const v=o.vista||'baixo';const X=x=>M+(v==='baixo'?(C-1-x):x)*S+S/2,Y=y=>M+y*S+S/2;
+  const Wd=M*2+C*S,Hd=M*2+R*S;let g=`<svg viewBox="0 0 ${Wd} ${Hd}" role="img" aria-label="${o.aria||''}">`;
+  g+=`<rect x="${M-10}" y="${M-10}" width="${C*S+20}" height="${R*S+20}" rx="10" fill="#cdb46a"/>`;
+  g+=`<rect x="${M-4}" y="${M-4}" width="${C*S+8}" height="${R*S+8}" rx="6" fill="#d9c57a"/>`;
+  for(let y=0;y<R;y++)for(let x=0;x<C;x++)g+=`<circle cx="${X(x)}" cy="${Y(y)}" r="7.5" fill="#b8713b"/><circle cx="${X(x)}" cy="${Y(y)}" r="3.2" fill="#2a1a10"/>`;
+  /* contornos das peças */
+  const box=(x0,y0,x1,y1,txt,col,dash)=>{const a=Math.min(X(x0),X(x1))-S/2,b=Y(y0)-S/2,w=Math.abs(X(x1)-X(x0))+S,h=Y(y1)-Y(y0)+S;
+    return `<rect x="${a}" y="${b}" width="${w}" height="${h}" rx="8" fill="${dash?'none':col+'22'}" stroke="${col}" stroke-width="2" ${dash?'stroke-dasharray="6 5"':''}/>`+(txt?`<text x="${a+w/2}" y="${b+h/2+6}" text-anchor="middle" fill="${col}" font-size="17" font-weight="700" opacity=".9">${txt}</text>`:'')};
+  const fant=v==='baixo';
+  if(o.pecas!==false){
+    g+=box(1,0,21,12,fant?'ESP (do outro lado)':'ESP32',fant?'#34506b':'#1f2a36',fant);
+    g+=box(22,4,33,14,fant?'tela (do outro lado)':'tela',fant?'#9b2c22':'#c0392b',fant);
+    g+=box(8,12,11,14,'',fant?'#34506b':'#444',fant);g+=box(0,12,3,14,'',fant?'#34506b':'#444',fant);
+    g+=`<text x="${(X(8)+X(11))/2}" y="${Y(13)+5}" text-anchor="middle" fill="${fant?'#34506b':'#222'}" font-size="14" font-weight="700">botão A</text>`;
+    g+=`<text x="${(X(0)+X(3))/2}" y="${Y(13)+5}" text-anchor="middle" fill="${fant?'#34506b':'#222'}" font-size="14" font-weight="700">botão B</text>`;
+    const ux=v==='baixo'?X(0)+S/2+4:X(0)-S/2-4;
+    g+=`<text x="${ux}" y="${Y(6)+5}" text-anchor="${v==='baixo'?'start':'end'}" fill="#fff" font-size="13" font-weight="700" transform="rotate(${v==='baixo'?90:-90} ${ux} ${Y(6)})">USB</text>`;
+  }
+  /* soldas das peças */
+  const hi=o.hi||[];
+  D.pads.forEach(p=>{const sel=(o.padsOn||[]).includes(p.part);g+=`<circle cx="${X(p.x)}" cy="${Y(p.y)}" r="${sel?9:7.5}" fill="${sel?'#e8e8e8':'#9aa0a6'}" stroke="${sel?'#61bf99':'#555'}" stroke-width="${sel?3:1}"/>`});
+  /* fios já feitos */
+  (o.antes||[]).forEach(w=>{g+=fio(w,X,Y,.5,4)});
+  if(o.fio)g+=fio(o.fio,X,Y,1,7,true);
+  /* rótulos */
+  (o.labels||[]).forEach(l=>{const x=X(l.x),y=Y(l.y);const dx=l.dx||0,dy=l.dy||-16;
+    g+=`<text x="${x+dx}" y="${y+dy}" text-anchor="${l.anc||'middle'}" font-size="${l.fs||13}" font-weight="700" fill="${l.col||'#fff'}" stroke="#0b0e11" stroke-width="4" paint-order="stroke">${l.t}</text>`});
+  (o.anel||[]).forEach(a=>{g+=`<circle class="pulse" cx="${X(a.x)}" cy="${Y(a.y)}" r="15" fill="none" stroke="${a.col}" stroke-width="4"/>`});
+  return g+'</svg>';
+}
+function fio(w,X,Y,op,sw,main){const[ax,ay]=w.a,[bx,by]=w.b;const x1=X(ax),y1=Y(ay),x2=X(bx),y2=Y(by);
+  const mx=(x1+x2)/2,my=(y1+y2)/2,dx=x2-x1,dy=y2-y1,L=Math.hypot(dx,dy)||1;const k=Math.min(40,L*.18);const cx=mx-dy/L*k,cy=my+dx/L*k;
+  const col=w.cor==='#c9ced6'?'#c9ced6':w.cor;
+  let s=`<path d="M${x1} ${y1}Q${cx} ${cy} ${x2} ${y2}" fill="none" stroke="${main?'#0b0e11':'none'}" stroke-width="${sw+5}" stroke-linecap="round" opacity="${op}"/>`;
+  s+=`<path d="M${x1} ${y1}Q${cx} ${cy} ${x2} ${y2}" fill="none" stroke="${col}" stroke-width="${sw}" stroke-linecap="round" opacity="${op}"/>`;
+  if(main){s+=shape(w.tipo,x1,y1,8,col,'#0b0e11',2)+shape(w.tipo,x2,y2,8,col,'#0b0e11',2)}
+  return s}
+const espLabels=()=>D.pads.filter(p=>p.part==='esp').map(p=>({x:p.x,y:p.y,t:p.lab,fs:10,dy:p.y===11?22:-14,col:'#cfd8e3'}));
+const tftLabels=()=>D.pads.filter(p=>p.part==='tft').map(p=>({x:p.x,y:p.y,t:p.lab,fs:11,dx:16,anc:'start',col:'#ffb3ad'}));
+
+const passos=[];
+passos.push({t:'Antes de começar: o jeito de soldar',html:()=>`
+<div class="do"><b>Você vai fazer 12 ligações.</b> Cada ligação é <b>um pedaço de fio encapado</b>: você descasca as duas pontas e solda <b>uma ponta em cada pino</b>, do lado de baixo da placa. Só isso.
+<ul><li>O fio pode fazer a curva que quiser. <b>O caminho não importa, só as duas pontas.</b></li>
+<li>Os furos da placa não são ligados entre si. Só fica ligado o que você ligar com fio ou com solda.</li>
+<li>Dois fios podem chegar no mesmo pino: solde os dois juntos.</li></ul></div>
+<div class="warn"><b>O que confunde todo mundo:</b> quando você vira a placa para soldar, <b>esquerda e direita trocam</b>. A USB que estava à esquerda fica à direita. Todos os desenhos de solda deste guia já estão <b>virados</b>, do jeito que você vai ver a placa na mão.</div>
+<div class="two"><div class="fig">${placa({vista:'cima',aria:'placa vista de cima'})}<p class="cap">De cima (como na sua foto): USB à esquerda.</p></div>
+<div class="fig">${placa({vista:'baixo',padsOn:['esp','tft','btA','btB'],aria:'placa vista de baixo'})}<p class="cap">Virada como página de livro: USB à direita. As bolinhas cinza são as soldas das peças.</p></div></div>`});
+passos.push({t:'O que separar',html:()=>`
+<div class="do"><ul>
+<li>Ferro de solda e estanho fino (0,8 mm ou 1 mm), esponja molhada.</li>
+<li><b>Fio encapado fino de 1 via</b>: fio de cabo de rede (cada parzinho tem 8 fios, um de cada cor) é ótimo. Precisa de uns 60 cm no total.</li>
+<li>2 barras <b>fêmea</b> de 15 pinos (para o ESP sair e entrar) e 1 barra <b>macho</b> de 8 pinos (para a tela).</li>
+<li>Os 2 botões 6×6, alicate de corte e o seu decapador.</li>
+<li>Fita crepe (segura as peças quando a placa está virada) e, se tiver, multímetro.</li></ul></div>
+<div class="do"><b>Como soldar um fio num pino:</b><ol>
+<li>Descasque 3 mm da ponta do fio e passe um pouco de estanho nela.</li>
+<li>Encoste a ponta no pino que já está soldado na placa.</li>
+<li>Encoste o ferro nos dois juntos por 2 segundos até o estanho derreter e envolver. Tire o ferro e espere sem mexer.</li></ol></div>`});
+passos.push({t:'Solde as 2 barras do ESP',html:()=>`
+<div class="do"><ol>
+<li>Encaixe as duas barras fêmea de 15 nos pinos do ESP.</li>
+<li>Ponha o ESP na placa <b>do jeito da sua foto</b>: USB para a esquerda, a fileira <b>VIN…EN</b> na <b>2ª fileira de furos</b> de cima, com <b>4 furos livres</b> à esquerda do VIN.</li>
+<li>A outra fileira (<b>3V3…D23</b>) cai sozinha 10 furos abaixo. Embaixo dela sobram <b>3 fileiras livres</b> (é onde vão os botões).</li>
+<li>Prenda com fita, vire a placa e solde os 30 pinos. Comece por um pino de cada ponta, confira se está reto, depois solde o resto.</li>
+<li>Tire o ESP. As barras ficam.</li></ol></div>
+<div class="fig">${placa({vista:'cima',padsOn:['esp'],labels:espLabels(),aria:'onde fica o ESP'})}<p class="cap">Vista de cima. Os nomes são os que estão escritos no seu ESP.</p></div>`});
+passos.push({t:'Solde a barra da tela',html:()=>`
+<div class="do"><ol>
+<li>A barra macho de 8 fica <b>em pé</b>, à direita do ESP, com <b>3 furos livres</b> entre o fim do ESP e ela.</li>
+<li>O 1º pino (VCC) fica na <b>7ª fileira</b> de cima. O último (LED) na <b>14ª</b>, uma fileira antes da última.</li>
+<li>Encaixe a tela nela para conferir que a tela fica para a direita, por cima da placa, como na sua foto. Tire a tela e solde só a barra.</li></ol></div>
+<div class="fig">${placa({vista:'cima',padsOn:['tft'],labels:tftLabels(),aria:'onde fica a barra da tela'})}<p class="cap">Vista de cima. VCC em cima, LED embaixo, na mesma ordem dos nomes escritos na sua tela.</p></div>`});
+passos.push({t:'Solde os 2 botões',html:()=>`
+<div class="do"><ol>
+<li>Os botões ficam nas <b>3 fileiras de baixo</b>, embaixo do ESP. Cada botão tem 4 pernas: duas na 1ª dessas fileiras e duas na última (pule a do meio).</li>
+<li><b>Botão B:</b> no canto de baixo à esquerda, pernas na <b>1ª e na 4ª coluna</b>.</li>
+<li><b>Botão A:</b> pernas na <b>9ª e na 12ª coluna</b>, ou seja, embaixo dos pinos <b>D4</b> e <b>D5</b> do ESP.</li>
+<li>Abra um pouquinho as pernas se precisar. Não importa para que lado o botão fica: ele funciona igual.</li></ol></div>
+<div class="fig">${placa({vista:'cima',padsOn:['btA','btB'],labels:[...espLabels().filter(l=>l.y===11)],aria:'onde ficam os botões'})}<p class="cap">Vista de cima.</p></div>`});
+D.wires.forEach((w,i)=>{passos.push({t:`Fio ${i+1} de 12: ${w.net}`,fio:i,html:()=>{
+  const labs=[];const addL=(p,txt)=>{labs.push({x:p[0],y:p[1],t:txt,fs:14,dy:p[1]>=12?30:-20,col:w.cor})};
+  const nomeCurto=s=>s.replace(/<[^>]+>/g,'').replace(/ \(.*\)/,'');
+  addL(w.a,nomeCurto(w.da));addL(w.b,nomeCurto(w.db));
+  return `
+<div class="wire"><span class="sw" style="background:${w.cor}"></span><span>Fio <b>${w.corNome}</b>, uns <b>${w.cm} cm</b></span></div>
+<div class="do"><div class="endp"><span class="tag" style="background:${w.cor}">ponta 1</span><span>${w.da}</span><span class="tag" style="background:${w.cor}">ponta 2</span><span>${w.db}</span></div>
+<p style="margin:12px 0 0;color:var(--mu)">Para que serve: ${w.why}</p></div>
+<div class="fig">${placa({vista:'baixo',antes:D.wires.slice(0,i),fio:w,labels:labs,anel:[{x:w.a[0],y:w.a[1],col:w.cor},{x:w.b[0],y:w.b[1],col:w.cor}],aria:'ligação '+(i+1)})}
+<p class="cap">Placa <b>virada</b> (USB à direita). Os fios dos passos anteriores aparecem apagadinhos.</p></div>`}})});
+passos.push({t:'Confira antes de ligar',html:()=>`
+<div class="do"><ol>
+<li>Olhe cada solda: brilhante e em volta do pino. Se o estanho encostou no furo vizinho, encoste o ferro e puxe o excesso.</li>
+<li>Com o multímetro no bip, encoste as pontas nas duas pontas de cada fio da tabela. Tem que apitar.</li>
+<li>Encoste entre o <b>3V3</b> e o <b>GND</b> do ESP: <b>não pode</b> apitar. Se apitar, tem estanho ou fio ligando os dois.</li></ol></div>
+<div class="fig"><table><tr><th>Fio</th><th>Ponta 1</th><th>Ponta 2</th></tr>${D.wires.map((w,i)=>`<tr><td><span class="sw" style="background:${w.cor};width:22px"></span> ${i+1}</td><td>${w.da}</td><td>${w.db}</td></tr>`).join('')}</table></div>`});
+passos.push({t:'Encaixe e teste',html:()=>`
+<div class="do"><ol>
+<li>Encaixe o ESP nas barras (USB para a esquerda) e a tela na barra dela.</li>
+<li>No código, onde ficam os <code>#define</code> dos pinos, use: <b>CS 4 · RESET 5 · botão A 16 · botão B 15</b>. SCK 18, SDA 23 e A0 21 continuam.</li>
+<li>Carregue primeiro o <b>jogo-teste-esp32</b>: a tela mostra faixas coloridas e muda quando você aperta cada botão.</li>
+<li>Funcionou? Carregue o DoisJogos.</li></ol></div>
+<div class="fig">${placa({vista:'baixo',antes:D.wires,aria:'todas as ligações'})}<p class="cap">Todas as 12 ligações, placa virada.</p></div>`});
+
+let cur=0;try{cur=Math.min(passos.length-1,+(localStorage.getItem(KEY+'-p')||0))}catch(e){}
+const bar=document.getElementById('bar'),main=document.getElementById('main');
+function draw(){
+  bar.innerHTML=passos.map((p,i)=>`<button class="${i===cur?'on':''} ${feitos[i]?'ok':''}" aria-label="passo ${i+1}: ${p.t}" data-i="${i}">${i+1}</button>`).join('');
+  const p=passos[cur];main.innerHTML=`<section class="step on"><p class="kick">Passo ${cur+1} de ${passos.length}</p><h2>${p.t}</h2>${p.html()}</section>`;
+  const d=document.getElementById('done');d.textContent=feitos[cur]?'Feito ✓ (desfazer)':'Fiz este passo ✓';d.classList.toggle('done',!!feitos[cur]);
+  document.getElementById('prev').disabled=cur===0;document.getElementById('next').disabled=cur===passos.length-1;
+  try{localStorage.setItem(KEY+'-p',cur)}catch(e){}
+}
+bar.onclick=e=>{const b=e.target.closest('button');if(b){cur=+b.dataset.i;draw();scrollTo(0,0)}};
+document.getElementById('prev').onclick=()=>{if(cur>0){cur--;draw();scrollTo(0,0)}};
+document.getElementById('next').onclick=()=>{if(cur<passos.length-1){cur++;draw();scrollTo(0,0)}};
+document.getElementById('done').onclick=()=>{feitos[cur]=!feitos[cur];salva();if(feitos[cur]&&cur<passos.length-1)cur++;draw();scrollTo(0,0)};
+addEventListener('keydown',e=>{if(e.key==='ArrowRight')document.getElementById('next').click();if(e.key==='ArrowLeft')document.getElementById('prev').click()});
+draw();
+</script>
+</body>
+</html>
