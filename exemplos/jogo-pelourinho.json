@@ -1,31 +1,31 @@
 {
-  "id": "pgferji0",
-  "nome": "Jogo Pelourinho — ESP32 (WROOM-32) + TFT + 2 botões",
-  "criado": 1795269057152,
+  "id": "pqpoawbu",
+  "nome": "Dois Jogos (Assembleia + Salvador a Juazeiro) — ESP32 + TFT + 2 botões",
+  "criado": 1795269216047,
   "perf": {
-    "id": "ckhjd7fp",
+    "id": "c6idghio",
     "pos": {
-      "ctld6mzm": {
-        "x": 0,
-        "y": 1,
-        "rot": 0
+      "c1djtmtr": {
+        "x": 6,
+        "y": 2,
+        "rot": 3
       },
-      "cu2k4kzr": {
-        "x": 5,
-        "y": 14,
-        "rot": 2,
+      "ctwmmbio": {
+        "x": 18,
+        "y": 1,
+        "rot": 1,
         "modo": "conector"
       },
-      "ctqbu17u": {
-        "x": 18,
-        "y": 10,
-        "rot": 0,
+      "crkw9o8e": {
+        "x": 1,
+        "y": 3,
+        "rot": 2,
         "modo": "direto"
       },
-      "cvatxrqu": {
-        "x": 21,
-        "y": 11,
-        "rot": 0,
+      "ciy6idd5": {
+        "x": 2,
+        "y": 7,
+        "rot": 2,
         "modo": "direto"
       }
     },
@@ -33,7 +33,7 @@
   },
   "comps": [
     {
-      "id": "ctld6mzm",
+      "id": "c1djtmtr",
       "tipo": "esp32-devkit30",
       "nome": "ESP32 DevKit V1 (30 pinos)",
       "papel": "placa",
@@ -90,7 +90,7 @@
       "aprox": true
     },
     {
-      "id": "cu2k4kzr",
+      "id": "ctwmmbio",
       "tipo": "tft18",
       "nome": "TFT 1,8\" SPI ST7735 (128×160)",
       "papel": "modulo",
@@ -120,7 +120,7 @@
       "aprox": true
     },
     {
-      "id": "ctqbu17u",
+      "id": "crkw9o8e",
       "tipo": "botao6",
       "nome": "BTN-A (botão 6×6)",
       "papel": "modulo",
@@ -144,7 +144,7 @@
       "aprox": true
     },
     {
-      "id": "cvatxrqu",
+      "id": "ciy6idd5",
       "tipo": "botao6",
       "nome": "BTN-B (botão 6×6)",
       "papel": "modulo",
@@ -168,7 +168,7 @@
       "aprox": true
     },
     {
-      "id": "ckhjd7fp",
+      "id": "c6idghio",
       "tipo": "perf10x5",
       "nome": "Placa perfurada 5×10 cm",
       "papel": "pcb",
@@ -189,42 +189,47 @@
   ],
   "nos": [
     {
-      "id": "njbydbwe",
+      "id": "n19zej3n",
       "nome": "3V3",
       "tipo": "energia",
       "cor": "vermelho",
       "pontos": [
         {
-          "c": "ctld6mzm",
+          "c": "c1djtmtr",
           "p": "3V3"
         },
         {
-          "c": "cu2k4kzr",
+          "c": "ctwmmbio",
           "p": "VCC"
+        },
+        {
+          "c": "ctwmmbio",
+          "p": "BL"
         }
       ],
-      "ok": false
+      "ok": false,
+      "nota": "BL (luz de fundo) direto no 3V3, como no código"
     },
     {
-      "id": "nrtcu6tm",
+      "id": "nebb81n7",
       "nome": "GND",
       "tipo": "terra",
       "cor": "preto",
       "pontos": [
         {
-          "c": "ctld6mzm",
+          "c": "c1djtmtr",
           "p": "GND"
         },
         {
-          "c": "cu2k4kzr",
+          "c": "ctwmmbio",
           "p": "GND"
         },
         {
-          "c": "ctqbu17u",
+          "c": "crkw9o8e",
           "p": "B"
         },
         {
-          "c": "cvatxrqu",
+          "c": "ciy6idd5",
           "p": "B"
         }
       ],
@@ -232,137 +237,119 @@
       "nota": "perna B (diagonal) de cada botão vai no GND"
     },
     {
-      "id": "njc74vjn",
+      "id": "n3nonbal",
       "nome": "SCK",
       "tipo": "sinal",
       "cor": "amarelo",
       "pontos": [
         {
-          "c": "ctld6mzm",
-          "p": "GPIO4"
+          "c": "c1djtmtr",
+          "p": "GPIO18"
         },
         {
-          "c": "cu2k4kzr",
+          "c": "ctwmmbio",
           "p": "SCL"
         }
       ],
       "ok": false
     },
     {
-      "id": "nfpd17q6",
+      "id": "npdc3x9i",
       "nome": "MOSI",
       "tipo": "sinal",
       "cor": "verde",
       "pontos": [
         {
-          "c": "ctld6mzm",
-          "p": "GPIO16"
+          "c": "c1djtmtr",
+          "p": "GPIO23"
         },
         {
-          "c": "cu2k4kzr",
+          "c": "ctwmmbio",
           "p": "SDA"
         }
       ],
       "ok": false
     },
     {
-      "id": "n0vx4hzr",
+      "id": "npxekwo1",
       "nome": "RST",
       "tipo": "sinal",
       "cor": "laranja",
       "pontos": [
         {
-          "c": "ctld6mzm",
-          "p": "GPIO17"
+          "c": "c1djtmtr",
+          "p": "GPIO22"
         },
         {
-          "c": "cu2k4kzr",
+          "c": "ctwmmbio",
           "p": "RES"
         }
       ],
       "ok": false
     },
     {
-      "id": "nh80qxiv",
+      "id": "n559lljb",
       "nome": "DC",
       "tipo": "sinal",
       "cor": "roxo",
       "pontos": [
         {
-          "c": "ctld6mzm",
-          "p": "GPIO18"
+          "c": "c1djtmtr",
+          "p": "GPIO21"
         },
         {
-          "c": "cu2k4kzr",
+          "c": "ctwmmbio",
           "p": "DC"
         }
       ],
       "ok": false
     },
     {
-      "id": "n9r0bxnx",
+      "id": "nswpanol",
       "nome": "CS",
       "tipo": "sinal",
       "cor": "azul",
       "pontos": [
         {
-          "c": "ctld6mzm",
-          "p": "GPIO19"
+          "c": "c1djtmtr",
+          "p": "GPIO5"
         },
         {
-          "c": "cu2k4kzr",
+          "c": "ctwmmbio",
           "p": "CS"
         }
       ],
       "ok": false
     },
     {
-      "id": "n5ibchfy",
-      "nome": "BL",
-      "tipo": "sinal",
-      "cor": "marrom",
-      "pontos": [
-        {
-          "c": "ctld6mzm",
-          "p": "GPIO21"
-        },
-        {
-          "c": "cu2k4kzr",
-          "p": "BL"
-        }
-      ],
-      "ok": false,
-      "nota": "luz de fundo por GPIO"
-    },
-    {
-      "id": "nlut64y5",
+      "id": "njr0tq88",
       "nome": "BTN_A",
       "tipo": "sinal",
       "cor": "branco",
       "pontos": [
         {
-          "c": "ctld6mzm",
-          "p": "GPIO14"
+          "c": "c1djtmtr",
+          "p": "GPIO32"
         },
         {
-          "c": "ctqbu17u",
+          "c": "crkw9o8e",
           "p": "A"
         }
       ],
       "ok": false
     },
     {
-      "id": "ng6fb30o",
+      "id": "nx8qdxst",
       "nome": "BTN_B",
       "tipo": "sinal",
       "cor": "rosa",
       "pontos": [
         {
-          "c": "ctld6mzm",
-          "p": "GPIO27"
+          "c": "c1djtmtr",
+          "p": "GPIO33"
         },
         {
-          "c": "cvatxrqu",
+          "c": "ciy6idd5",
           "p": "A"
         }
       ],
@@ -381,14 +368,13 @@
     "labio": 3
   },
   "checks": {},
-  "codigo": "// Teste da montagem — nó a nó\n// ESP32-WROOM-32 (DevKit V1, 30 pinos) + TFT 1,8\" ST7735 + 2 botões 6×6\n// Rode ANTES de soldar e de novo DEPOIS de soldar: se as 3 faixas de cor\n// aparecerem e os dois botões acenderem na tela, a montagem está certa.\n// Placa na Arduino IDE: \"ESP32 Dev Module\".\n// Bibliotecas (Gerenciador de Bibliotecas da Arduino IDE):\n//   \"Adafruit ST7735 and ST7789 Library\" e \"Adafruit GFX Library\"\n#include <Adafruit_GFX.h>\n#include <Adafruit_ST7735.h>\n#include <SPI.h>\n#include \"pinos.h\"   // pinos gerados pelo nó a nó a partir dos nós\n\nAdafruit_ST7735 tft = Adafruit_ST7735(&SPI, PINO_CS, PINO_DC, PINO_RST);\n\nconst int BOTOES[2] = {PINO_BTN_A, PINO_BTN_B};\nconst char *NOMES[2] = {\"A\", \"B\"};\nbool antes[2] = {false, false};\n\nvoid desenhaBotao(int i, bool apertado) {\n  int x = 20 + i * 76;\n  tft.fillRoundRect(x, 80, 44, 36, 6, apertado ? ST77XX_YELLOW : 0x2945);\n  tft.setTextColor(apertado ? ST77XX_BLACK : ST77XX_WHITE);\n  tft.setCursor(x + 19, 94);\n  tft.print(NOMES[i]);\n}\n\nvoid setup() {\n  Serial.begin(115200);\n  // Sem resistor: o ESP liga um resistor interno (pull-up) e o botão leva o pino ao GND.\n  for (int i = 0; i < 2; i++) pinMode(BOTOES[i], INPUT_PULLUP);\n\n  pinMode(PINO_BL, OUTPUT);\n  digitalWrite(PINO_BL, HIGH);  // liga a luz de fundo (no jogo dá para usar analogWrite para o brilho)\n\n  SPI.begin(PINO_SCK, -1, PINO_MOSI, PINO_CS);\n  tft.initR(INITR_BLACKTAB);  // se a borda ou as cores saírem erradas: INITR_GREENTAB ou INITR_REDTAB\n  tft.setRotation(1);         // tela deitada (160 × 128)\n  tft.fillScreen(ST77XX_BLACK);\n\n  // Faixas na ordem vermelho, verde, azul = SPI e tela ok\n  tft.fillRect(0, 0, 53, 40, ST77XX_RED);\n  tft.fillRect(53, 0, 54, 40, ST77XX_GREEN);\n  tft.fillRect(107, 0, 53, 40, ST77XX_BLUE);\n\n  tft.setTextColor(ST77XX_WHITE);\n  tft.setCursor(4, 48);\n  tft.print(\"teste da montagem\");\n  tft.setCursor(4, 60);\n  tft.print(\"aperte cada botao\");\n  for (int i = 0; i < 2; i++) desenhaBotao(i, false);\n}\n\nvoid loop() {\n  for (int i = 0; i < 2; i++) {\n    bool apertado = digitalRead(BOTOES[i]) == LOW;\n    if (apertado != antes[i]) {\n      antes[i] = apertado;\n      desenhaBotao(i, apertado);\n      if (apertado) {\n        Serial.print(\"apertou \");\n        Serial.println(NOMES[i]);\n      }\n    }\n  }\n  delay(10);\n}\n",
+  "codigo": "/*\n  DOIS JOGOS NUMA PLACA — menu pra escolher:\n    1. ASSEMBLEIA — Campanha Civica em 3 Fases (Pelourinho / Salvador)\n    2. DE SALVADOR A JUAZEIRO — pra Renata e Cintia\n  Cintia Vitorino Independent Games\n\n  ESP32 + TFT 1.8\" ST7735 (128x160, SPI) + 2 botoes\n  Bibliotecas: Adafruit GFX Library, Adafruit ST7735 and ST7789\n  (Preferences.h ja vem no pacote oficial do ESP32)\n\n  Arquivos desta pasta (os cinco precisam estar juntos):\n    DoisJogos.ino    este arquivo\n    principal.h      menu e ligacao entre os dois jogos\n    assembleia.h     jogo da Assembleia\n    jogo.h           jogo De Salvador a Juazeiro\n    sprites.h        bonecas de lego, flores e baloes\n\n  LIGACOES (as mesmas de antes)\n    TFT  VCC -> 3V3     GND -> GND     LED/BL -> 3V3\n         SCL/SCK -> GPIO18   SDA/MOSI -> GPIO23\n         CS -> GPIO5   DC/A0 -> GPIO21   RES/RST -> GPIO22\n    Botao A : GPIO32 <-> GND\n    Botao B : GPIO33 <-> GND\n\n  MENU: B troca de jogo, A entra.\n  Dentro de qualquer jogo, segure A e B juntos por 3 segundos pra voltar ao menu.\n*/\n\n#include \"principal.h\"\n\nuint32_t lastT = 0;\n\nvoid setup() {\n  pinMode(BTN_A, INPUT_PULLUP);\n  pinMode(BTN_B, INPUT_PULLUP);\n  tft.initR(INITR_BLACKTAB);\n  tft.setRotation(1);            // 160x128 paisagem\n  tft.fillScreen(0);\n  principalInit();\n}\n\nvoid loop() {\n  uint32_t now = millis();\n  if (now - lastT < 33) return;  // ~30 quadros por segundo\n  lastT = now;\n  bool a = digitalRead(BTN_A) == LOW;\n  bool b = digitalRead(BTN_B) == LOW;\n  principalTick(a, b);\n  tft.drawRGBBitmap(0, 0, tela.getBuffer(), 160, 128);\n}\n",
   "analise": {
-    "resumo": "ESP32-WROOM-32 (DevKit V1, 30 pinos), tela TFT 1,8\" ST7735 de 8 pinos e 2 botões 6×6. Escolhi pinos seguros do ESP32 (fora dos que atrapalham a partida e dos que só leem) e na mesma ordem dos pinos da tela, para nenhuma trilha cruzar outra. Os botões usam o resistor interno do ESP (INPUT_PULLUP): uma perna no GPIO, a perna em diagonal no GND.",
+    "resumo": "ESP32-WROOM-32 (DevKit V1, 30 pinos), TFT 1,8\" ST7735 e 2 botões 6×6, com os mesmos pinos do código DoisJogos: a placa soldada roda o jogo sem mudar nada. SCK 18 e MOSI 23 são os pinos de SPI de fábrica do ESP32 (a tela fica mais rápida). Os botões usam o resistor interno (INPUT_PULLUP).",
     "alertas": [
-      "No código do jogo, troque os números dos pinos pelos nomes do pinos.h (PINO_SCK, PINO_MOSI, PINO_RST, PINO_DC, PINO_CS, PINO_BL, PINO_BTN_A, PINO_BTN_B).",
-      "Luz de fundo (BL) num GPIO: no setup coloque pinMode(PINO_BL, OUTPUT) e digitalWrite(PINO_BL, HIGH).",
-      "Na Arduino IDE escolha a placa \"ESP32 Dev Module\".",
-      "Confira a distância entre as duas fileiras de pinos do seu ESP: o site usa 10 furos (2,54 cm). Se na sua forem 9, mude em “pinagem física” na etapa 1 antes de soldar.",
+      "Pinos iguais aos do seu código: SCK 18, MOSI 23, CS 5, DC 21, RST 22, BL no 3V3, botão A no 32 e B no 33.",
+      "Na Arduino IDE escolha a placa \"ESP32 Dev Module\"; os cinco arquivos (DoisJogos.ino, principal.h, assembleia.h, jogo.h, sprites.h) ficam juntos na mesma pasta.",
+      "Confira a distância entre as duas fileiras de pinos do seu ESP: o site usa 10 furos. Se na sua forem 9, mude em “pinagem física” na etapa 1 antes de soldar.",
       "Pinagem física do DevKit V1 de 30 pinos: confira com o que está escrito na sua placa."
     ],
     "sem": [
@@ -407,6 +393,6 @@
       "A tela vai ao lado da placa, sob a janela da tampa, ligada pelo cabo de 8 fios.",
       "Os botões ficam baixos em relação à tampa: veja as opções na etapa Case (botões na tampa é a mais simples)."
     ],
-    "quando": 1795269057152
+    "quando": 1795269216047
   }
 }

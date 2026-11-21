@@ -1,5 +1,6 @@
 // Teste da montagem — nó a nó
 // ESP32-WROOM-32 (DevKit V1, 30 pinos) + TFT 1,8" ST7735 + 2 botões 6×6
+// Mesmos pinos do DoisJogos (BL ligado direto no 3V3).
 // Rode ANTES de soldar e de novo DEPOIS de soldar: se as 3 faixas de cor
 // aparecerem e os dois botões acenderem na tela, a montagem está certa.
 // Placa na Arduino IDE: "ESP32 Dev Module".
@@ -29,8 +30,6 @@ void setup() {
   // Sem resistor: o ESP liga um resistor interno (pull-up) e o botão leva o pino ao GND.
   for (int i = 0; i < 2; i++) pinMode(BOTOES[i], INPUT_PULLUP);
 
-  pinMode(PINO_BL, OUTPUT);
-  digitalWrite(PINO_BL, HIGH);  // liga a luz de fundo (no jogo dá para usar analogWrite para o brilho)
 
   SPI.begin(PINO_SCK, -1, PINO_MOSI, PINO_CS);
   tft.initR(INITR_BLACKTAB);  // se a borda ou as cores saírem erradas: INITR_GREENTAB ou INITR_REDTAB
