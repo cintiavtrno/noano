@@ -33,5 +33,5 @@ Também tem **Minhas peças** (peças com medidas e pinagem próprias), **Meu ma
 
 ## Exemplos
 
-- `exemplos/jogo-pelourinho.json`: ESP32-S3 + TFT 1,8" + 2 botões 6×6, com protoboard e placa perfurada 7×5 (todas as trilhas por baixo). No site: **importar** → escolha o arquivo.
-- `exemplos/knob-cha-cozinha.json` e a pasta `exemplos/knob-cha-cozinha/` (código + `pinos.h`): a mesma placa do jogo com um joystick fazendo o papel de knob, e 4 cenas animadas (chá, pepino, batata, cenoura). Prévia no navegador em `knob/index.html`.
+- `exemplos/jogo-pelourinho.json`: ESP32-WROOM-32 (DevKit V1, 30 pinos) + TFT 1,8" + 2 botões 6×6, com protoboard e placa perfurada 5×10 (todas as trilhas por baixo). Código de teste em `exemplos/jogo-teste-esp32/`. No site: **importar** → escolha o arquivo (ou escolha o exemplo no seletor de projetos). A versão antiga para ESP32-S3 ficou em `exemplos/jogo-pelourinho-s3.json`.
+- `exemplos/knob-cha-cozinha.json` e a pasta `exemplos/knob-cha-cozinha/` (código + `pinos.h`): ESP32-S3 + TFT + 2 botões com um joystick fazendo o papel de knob, e 4 cenas animadas (chá, pepino, batata, cenoura). Prévia no navegador em `knob/index.html`.

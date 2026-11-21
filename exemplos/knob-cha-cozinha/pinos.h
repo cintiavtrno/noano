@@ -1,5 +1,5 @@
 // pinos.h — gerado pelo nó a nó a partir dos nós do projeto "Knob: chá e cozinha — ESP32-S3 + TFT + joystick"
-// 18/11/2026. Confira com o seu circuito antes de usar.
+// 21/11/2026. Confira com o seu circuito antes de usar.
 #pragma once
 
 #define PINO_SCK           15   // fio amarelo: ESP32-S3 GPIO15 -> TFT SCL

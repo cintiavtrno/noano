@@ -3,35 +3,35 @@
   "nome": "Knob: chá e cozinha — ESP32-S3 + TFT + joystick",
   "criado": 1795022163874,
   "perf": {
-    "id": "ch7ygb5k",
+    "id": "c4hu2xzn",
     "pos": {
       "cxsy513u": {
-        "x": 0,
-        "y": 0,
-        "rot": 2
+        "x": 7,
+        "y": 4,
+        "rot": 0
       },
       "c654xfu3": {
-        "x": 9,
-        "y": 12,
-        "rot": 2,
+        "x": 12,
+        "y": 2,
+        "rot": 0,
         "modo": "conector"
       },
       "caaxpmhl": {
-        "x": 1,
-        "y": 11,
-        "rot": 1,
+        "x": 24,
+        "y": 0,
+        "rot": 3,
         "modo": "direto"
       },
       "c3rlltpm": {
-        "x": 5,
-        "y": 13,
-        "rot": 1,
+        "x": 29,
+        "y": 0,
+        "rot": 3,
         "modo": "direto"
       },
       "c2y2ohhp": {
-        "x": 19,
-        "y": 12,
-        "rot": 0,
+        "x": 4,
+        "y": 2,
+        "rot": 2,
         "modo": "conector"
       }
     },
@@ -215,23 +215,23 @@
       "aprox": true
     },
     {
-      "id": "ch7ygb5k",
-      "tipo": "perf7x5",
-      "nome": "Placa perfurada 7×5 cm",
+      "id": "c4hu2xzn",
+      "tipo": "perf10x5",
+      "nome": "Placa perfurada 5×10 cm",
       "papel": "pcb",
-      "L": 70,
+      "L": 100,
       "W": 50,
       "H": 1.6,
       "pinos": [],
       "janela": null,
       "lateral": null,
       "fp": null,
-      "cols": 24,
+      "cols": 36,
       "rows": 17,
+      "rotulo": "linhaLetra",
       "rot": false,
       "incluir": true,
-      "aprox": true,
-      "rotulo": "linhaLetra"
+      "aprox": true
     }
   ],
   "nos": [
@@ -501,7 +501,7 @@
       "Mesma protoboard do jogo; o joystick fica ao lado, ligado por 5 jumpers fêmea–fêmea: GND no trilho −, +5V no trilho + (que é 3V3), VRx no GPIO4, VRy no GPIO5 e SW no GPIO6."
     ],
     "com": [
-      "Na placa 7×5, o joystick entra como mais uma barra de pinos macho (1×5) e chega por cabo, assim como a tela.",
+      "Na placa 5×10, o joystick entra como mais uma barra de pinos macho (1×5) e chega por cabo, assim como a tela.",
       "Solde a barra do joystick, depois as trilhas de 3V3 e GND e por último VRx, VRy e SW."
     ],
     "caseDicas": [
