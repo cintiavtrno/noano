@@ -6,32 +6,32 @@
     "id": "c4hu2xzn",
     "pos": {
       "cxsy513u": {
-        "x": 7,
+        "x": 5,
         "y": 4,
-        "rot": 0
+        "rot": 2
       },
       "c654xfu3": {
-        "x": 12,
+        "x": 14,
         "y": 2,
-        "rot": 0,
+        "rot": 2,
         "modo": "conector"
       },
       "caaxpmhl": {
-        "x": 24,
+        "x": 5,
         "y": 0,
-        "rot": 3,
+        "rot": 1,
         "modo": "direto"
       },
       "c3rlltpm": {
-        "x": 29,
+        "x": 0,
         "y": 0,
-        "rot": 3,
+        "rot": 1,
         "modo": "direto"
       },
       "c2y2ohhp": {
-        "x": 4,
-        "y": 2,
-        "rot": 2,
+        "x": 30,
+        "y": 3,
+        "rot": 1,
         "modo": "conector"
       }
     },

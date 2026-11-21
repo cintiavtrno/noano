@@ -7,25 +7,25 @@
     "pos": {
       "c1djtmtr": {
         "x": 14,
-        "y": 1,
+        "y": 3,
         "rot": 0
       },
       "ctwmmbio": {
-        "x": 3,
-        "y": 7,
-        "rot": 0,
+        "x": 10,
+        "y": 0,
+        "rot": 1,
         "modo": "conector"
       },
       "crkw9o8e": {
         "x": 8,
-        "y": 1,
-        "rot": 0,
+        "y": 10,
+        "rot": 2,
         "modo": "direto"
       },
       "ciy6idd5": {
         "x": 5,
-        "y": 1,
-        "rot": 0,
+        "y": 9,
+        "rot": 2,
         "modo": "direto"
       }
     },
