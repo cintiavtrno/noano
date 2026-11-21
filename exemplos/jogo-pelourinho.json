@@ -12,20 +12,21 @@
       },
       "ctwmmbio": {
         "x": 22,
-        "y": 5,
+        "y": 6,
         "rot": 1,
-        "modo": "conector"
+        "modo": "conector",
+        "vy": 6
       },
       "crkw9o8e": {
-        "x": 22,
-        "y": 0,
-        "rot": 0,
+        "x": 8,
+        "y": 12,
+        "rot": 1,
         "modo": "direto"
       },
       "ciy6idd5": {
-        "x": 25,
-        "y": 2,
-        "rot": 0,
+        "x": 0,
+        "y": 12,
+        "rot": 1,
         "modo": "direto"
       }
     },
@@ -98,14 +99,14 @@
       "W": 56,
       "H": 8,
       "pinos": [
-        "LED",
         "VCC",
         "GND",
         "CS",
-        "SCK",
-        "A0",
         "RESET",
-        "SDA"
+        "A0",
+        "SDA",
+        "SCK",
+        "LED"
       ],
       "janela": {
         "w": 29,
@@ -278,7 +279,7 @@
       "pontos": [
         {
           "c": "c1djtmtr",
-          "p": "GPIO22"
+          "p": "GPIO5"
         },
         {
           "c": "ctwmmbio",
@@ -312,7 +313,7 @@
       "pontos": [
         {
           "c": "c1djtmtr",
-          "p": "GPIO5"
+          "p": "GPIO4"
         },
         {
           "c": "ctwmmbio",
@@ -329,7 +330,7 @@
       "pontos": [
         {
           "c": "c1djtmtr",
-          "p": "GPIO32"
+          "p": "GPIO16"
         },
         {
           "c": "crkw9o8e",
@@ -346,7 +347,7 @@
       "pontos": [
         {
           "c": "c1djtmtr",
-          "p": "GPIO33"
+          "p": "GPIO15"
         },
         {
           "c": "ciy6idd5",
@@ -368,13 +369,13 @@
     "labio": 3
   },
   "checks": {},
-  "codigo": "/*\n  DOIS JOGOS NUMA PLACA — menu pra escolher:\n    1. ASSEMBLEIA — Campanha Civica em 3 Fases (Pelourinho / Salvador)\n    2. DE SALVADOR A JUAZEIRO — pra Renata e Cintia\n  Cintia Vitorino Independent Games\n\n  ESP32 + TFT 1.8\" ST7735 (128x160, SPI) + 2 botoes\n  Bibliotecas: Adafruit GFX Library, Adafruit ST7735 and ST7789\n  (Preferences.h ja vem no pacote oficial do ESP32)\n\n  Arquivos desta pasta (os cinco precisam estar juntos):\n    DoisJogos.ino    este arquivo\n    principal.h      menu e ligacao entre os dois jogos\n    assembleia.h     jogo da Assembleia\n    jogo.h           jogo De Salvador a Juazeiro\n    sprites.h        bonecas de lego, flores e baloes\n\n  LIGACOES (as mesmas de antes)\n    TFT  VCC -> 3V3     GND -> GND     LED/BL -> 3V3\n         SCL/SCK -> GPIO18   SDA/MOSI -> GPIO23\n         CS -> GPIO5   DC/A0 -> GPIO21   RES/RST -> GPIO22\n    Botao A : GPIO32 <-> GND\n    Botao B : GPIO33 <-> GND\n\n  MENU: B troca de jogo, A entra.\n  Dentro de qualquer jogo, segure A e B juntos por 3 segundos pra voltar ao menu.\n*/\n\n#include \"principal.h\"\n\nuint32_t lastT = 0;\n\nvoid setup() {\n  pinMode(BTN_A, INPUT_PULLUP);\n  pinMode(BTN_B, INPUT_PULLUP);\n  tft.initR(INITR_BLACKTAB);\n  tft.setRotation(1);            // 160x128 paisagem\n  tft.fillScreen(0);\n  principalInit();\n}\n\nvoid loop() {\n  uint32_t now = millis();\n  if (now - lastT < 33) return;  // ~30 quadros por segundo\n  lastT = now;\n  bool a = digitalRead(BTN_A) == LOW;\n  bool b = digitalRead(BTN_B) == LOW;\n  principalTick(a, b);\n  tft.drawRGBBitmap(0, 0, tela.getBuffer(), 160, 128);\n}\n",
+  "codigo": "/*\n  DOIS JOGOS NUMA PLACA — menu pra escolher:\n    1. ASSEMBLEIA — Campanha Civica em 3 Fases (Pelourinho / Salvador)\n    2. DE SALVADOR A JUAZEIRO — pra Renata e Cintia\n  Cintia Vitorino Independent Games\n\n  ESP32 + TFT 1.8\" ST7735 (128x160, SPI) + 2 botoes\n  Bibliotecas: Adafruit GFX Library, Adafruit ST7735 and ST7789\n  (Preferences.h ja vem no pacote oficial do ESP32)\n\n  Arquivos desta pasta (os cinco precisam estar juntos):\n    DoisJogos.ino    este arquivo\n    principal.h      menu e ligacao entre os dois jogos\n    assembleia.h     jogo da Assembleia\n    jogo.h           jogo De Salvador a Juazeiro\n    sprites.h        bonecas de lego, flores e baloes\n\n  LIGACOES (versao da placa 5x10 com a tela encaixada direto)\n    TFT  VCC -> 3V3     GND -> GND     LED -> 3V3\n         SCK -> GPIO18   SDA -> GPIO23\n         CS -> GPIO4   A0 -> GPIO21   RESET -> GPIO5\n    Botao A : GPIO16 <-> GND\n    Botao B : GPIO15 <-> GND\n  (antes: CS 5, RESET 22, botao A 32, botao B 33 -- mude os #define)\n\n  MENU: B troca de jogo, A entra.\n  Dentro de qualquer jogo, segure A e B juntos por 3 segundos pra voltar ao menu.\n*/\n\n#include \"principal.h\"\n\nuint32_t lastT = 0;\n\nvoid setup() {\n  pinMode(BTN_A, INPUT_PULLUP);\n  pinMode(BTN_B, INPUT_PULLUP);\n  tft.initR(INITR_BLACKTAB);\n  tft.setRotation(1);            // 160x128 paisagem\n  tft.fillScreen(0);\n  principalInit();\n}\n\nvoid loop() {\n  uint32_t now = millis();\n  if (now - lastT < 33) return;  // ~30 quadros por segundo\n  lastT = now;\n  bool a = digitalRead(BTN_A) == LOW;\n  bool b = digitalRead(BTN_B) == LOW;\n  principalTick(a, b);\n  tft.drawRGBBitmap(0, 0, tela.getBuffer(), 160, 128);\n}\n",
   "analise": {
-    "resumo": "ESP32-WROOM-32 (DevKit V1, 30 pinos), TFT 1,8\" ST7735 e 2 botões 6×6, com os mesmos pinos do código DoisJogos: a placa soldada roda o jogo sem mudar nada. SCK 18 e MOSI 23 são os pinos de SPI de fábrica do ESP32 (a tela fica mais rápida). Os botões usam o resistor interno (INPUT_PULLUP).",
+    "resumo": "ESP32-WROOM-32 (DevKit V1, 30 pinos), TFT 1,8\" ST7735 encaixado direto na placa e 2 botões 6×6 embaixo do ESP. Para tudo caber sem fio por cima, quatro pinos mudaram: CS 5→4, RESET 22→5, botão A 32→16, botão B 33→15. SCK 18, SDA 23 e A0 21 continuam iguais.",
     "alertas": [
-      "Pinos iguais aos do seu código: SCK 18, MOSI 23, CS 5, DC 21, RST 22, LED no 3V3, botão A no 32 e B no 33.",
+      "Mude no código (onde ficam os #define dos pinos): CS = 4, RST = 5, BTN_A = 16, BTN_B = 15. O resto fica igual.",
       "Na Arduino IDE escolha a placa \"ESP32 Dev Module\"; os cinco arquivos (DoisJogos.ino, principal.h, assembleia.h, jogo.h, sprites.h) ficam juntos na mesma pasta.",
-      "Confira a distância entre as duas fileiras de pinos do seu ESP: o site usa 10 furos. Se na sua forem 9, mude em “pinagem física” na etapa 1 antes de soldar.",
+      "GPIO15 é pino de boot: se o botão B estiver apertado ao ligar, só some o texto de inicialização no monitor serial; não atrapalha o jogo.",
       "Pinagem física do DevKit V1 de 30 pinos: confira com o que está escrito na sua placa."
     ],
     "sem": [
@@ -387,7 +388,7 @@
       "Placa 5×10: solde primeiro as duas barras fêmea 1×15 (o soquete do ESP), com o ESP encaixado nelas para ficarem alinhadas; depois tire o ESP.",
       "Solde a barra macho 1×8 da tela e os 2 botões.",
       "Vire a placa e faça as trilhas: primeiro GND e 3V3, testando com o multímetro; depois os sinais.",
-      "Ligue a tela na barra com 8 jumpers fêmea–fêmea, pino por nome (VCC no VCC, CS no CS…). A ordem da barra é diferente da ordem da tela de propósito: assim as trilhas por baixo não se cruzam."
+      "Encaixe a tela direto na barra de 8 pinos (VCC no G23, LED no N23). Se preferir, ligue por 8 jumpers fêmea–fêmea, pino por nome."
     ],
     "caseDicas": [
       "A tela vai ao lado da placa, sob a janela da tampa, ligada pelo cabo de 8 fios.",
