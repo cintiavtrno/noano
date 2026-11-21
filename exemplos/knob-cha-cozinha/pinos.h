@@ -2,12 +2,12 @@
 // 21/11/2026. Confira com o seu circuito antes de usar.
 #pragma once
 
-#define PINO_SCK           15   // fio amarelo: ESP32-S3 GPIO15 -> TFT SCL
+#define PINO_SCK           15   // fio amarelo: ESP32-S3 GPIO15 -> TFT SCK
 #define PINO_MOSI          16   // fio verde: ESP32-S3 GPIO16 -> TFT SDA
-#define PINO_RST           17   // fio laranja: ESP32-S3 GPIO17 -> TFT RES
-#define PINO_DC            18   // fio roxo: ESP32-S3 GPIO18 -> TFT DC
+#define PINO_RST           17   // fio laranja: ESP32-S3 GPIO17 -> TFT RESET
+#define PINO_DC            18   // fio roxo: ESP32-S3 GPIO18 -> TFT A0
 #define PINO_CS             8   // fio azul: ESP32-S3 GPIO8 -> TFT CS
-#define PINO_BL             9   // fio marrom: ESP32-S3 GPIO9 -> TFT BL
+#define PINO_BL             9   // fio marrom: ESP32-S3 GPIO9 -> TFT LED
 #define PINO_BTN_A         12   // fio branco: ESP32-S3 GPIO12 -> BTN-A A
 #define PINO_BTN_B         13   // fio rosa: ESP32-S3 GPIO13 -> BTN-B A
 #define PINO_VRX            4   // fio ciano: ESP32-S3 GPIO4 -> Joystick VRx

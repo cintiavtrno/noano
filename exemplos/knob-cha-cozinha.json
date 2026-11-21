@@ -120,12 +120,12 @@
       "pinos": [
         "GND",
         "VCC",
-        "SCL",
+        "SCK",
         "SDA",
-        "RES",
-        "DC",
+        "RESET",
+        "A0",
         "CS",
-        "BL"
+        "LED"
       ],
       "janela": {
         "w": 29,
@@ -299,7 +299,7 @@
         },
         {
           "c": "c654xfu3",
-          "p": "SCL"
+          "p": "SCK"
         }
       ],
       "ok": false
@@ -333,7 +333,7 @@
         },
         {
           "c": "c654xfu3",
-          "p": "RES"
+          "p": "RESET"
         }
       ],
       "ok": false
@@ -350,7 +350,7 @@
         },
         {
           "c": "c654xfu3",
-          "p": "DC"
+          "p": "A0"
         }
       ],
       "ok": false
@@ -384,7 +384,7 @@
         },
         {
           "c": "c654xfu3",
-          "p": "BL"
+          "p": "LED"
         }
       ],
       "ok": false,

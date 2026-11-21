@@ -11,20 +11,20 @@
         "rot": 2
       },
       "ctwmmbio": {
-        "x": 15,
-        "y": 14,
-        "rot": 0,
+        "x": 22,
+        "y": 5,
+        "rot": 1,
         "modo": "conector"
       },
       "crkw9o8e": {
         "x": 22,
-        "y": 2,
+        "y": 0,
         "rot": 0,
         "modo": "direto"
       },
       "ciy6idd5": {
         "x": 25,
-        "y": 0,
+        "y": 2,
         "rot": 0,
         "modo": "direto"
       }
@@ -98,14 +98,14 @@
       "W": 56,
       "H": 8,
       "pinos": [
-        "GND",
+        "LED",
         "VCC",
-        "SCL",
-        "SDA",
-        "RES",
-        "DC",
+        "GND",
         "CS",
-        "BL"
+        "SCK",
+        "A0",
+        "RESET",
+        "SDA"
       ],
       "janela": {
         "w": 29,
@@ -204,11 +204,11 @@
         },
         {
           "c": "ctwmmbio",
-          "p": "BL"
+          "p": "LED"
         }
       ],
       "ok": false,
-      "nota": "BL (luz de fundo) direto no 3V3, como no código"
+      "nota": "LED (luz de fundo) direto no 3V3, como no código"
     },
     {
       "id": "nebb81n7",
@@ -248,7 +248,7 @@
         },
         {
           "c": "ctwmmbio",
-          "p": "SCL"
+          "p": "SCK"
         }
       ],
       "ok": false
@@ -282,7 +282,7 @@
         },
         {
           "c": "ctwmmbio",
-          "p": "RES"
+          "p": "RESET"
         }
       ],
       "ok": false
@@ -299,7 +299,7 @@
         },
         {
           "c": "ctwmmbio",
-          "p": "DC"
+          "p": "A0"
         }
       ],
       "ok": false
@@ -372,7 +372,7 @@
   "analise": {
     "resumo": "ESP32-WROOM-32 (DevKit V1, 30 pinos), TFT 1,8\" ST7735 e 2 botões 6×6, com os mesmos pinos do código DoisJogos: a placa soldada roda o jogo sem mudar nada. SCK 18 e MOSI 23 são os pinos de SPI de fábrica do ESP32 (a tela fica mais rápida). Os botões usam o resistor interno (INPUT_PULLUP).",
     "alertas": [
-      "Pinos iguais aos do seu código: SCK 18, MOSI 23, CS 5, DC 21, RST 22, BL no 3V3, botão A no 32 e B no 33.",
+      "Pinos iguais aos do seu código: SCK 18, MOSI 23, CS 5, DC 21, RST 22, LED no 3V3, botão A no 32 e B no 33.",
       "Na Arduino IDE escolha a placa \"ESP32 Dev Module\"; os cinco arquivos (DoisJogos.ino, principal.h, assembleia.h, jogo.h, sprites.h) ficam juntos na mesma pasta.",
       "Confira a distância entre as duas fileiras de pinos do seu ESP: o site usa 10 furos. Se na sua forem 9, mude em “pinagem física” na etapa 1 antes de soldar.",
       "Pinagem física do DevKit V1 de 30 pinos: confira com o que está escrito na sua placa."
@@ -387,7 +387,7 @@
       "Placa 5×10: solde primeiro as duas barras fêmea 1×15 (o soquete do ESP), com o ESP encaixado nelas para ficarem alinhadas; depois tire o ESP.",
       "Solde a barra macho 1×8 da tela e os 2 botões.",
       "Vire a placa e faça as trilhas: primeiro GND e 3V3, testando com o multímetro; depois os sinais.",
-      "Ligue a tela na barra com um cabo de 8 jumpers fêmea–fêmea na mesma ordem de cores."
+      "Ligue a tela na barra com 8 jumpers fêmea–fêmea, pino por nome (VCC no VCC, CS no CS…). A ordem da barra é diferente da ordem da tela de propósito: assim as trilhas por baixo não se cruzam."
     ],
     "caseDicas": [
       "A tela vai ao lado da placa, sob a janela da tampa, ligada pelo cabo de 8 fios.",
